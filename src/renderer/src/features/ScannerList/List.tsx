@@ -1,23 +1,14 @@
 import { useScanner } from "@/storage/ScannerStore";
-import { styled, LinearProgress } from "@mui/material";
-import { Box } from "@mui/system";
-import { DataGrid, GridRowsProp, GridColDef, GridOverlay } from "@mui/x-data-grid";
+import { styled, LinearProgress, Box } from "@mui/material";
+import { DataGrid, GridColDef, GridOverlay } from "@mui/x-data-grid";
 import { useMemo } from "react";
+import LoadingOverlay from "./LoadingOverlay";
+import Toolbar from "./Toolbar";
 
 const Image = styled("img")(() => ({
   width: 20,
   height: 20,
 }));
-
-function CustomLoadingOverlay() {
-  return (
-    <GridOverlay>
-      <Box sx={{ position: "absolute", top: 0, width: "100%" }}>
-        <LinearProgress />
-      </Box>
-    </GridOverlay>
-  );
-}
 
 const columns: GridColDef[] = [
   {
@@ -33,7 +24,7 @@ const columns: GridColDef[] = [
     ),
   },
   { field: "name", headerName: "Name", editable: false, sortable: false, flex: 1 },
-  { field: "executionPath", headerName: "File", editable: false, sortable: false, flex: 1 },
+  { field: "executionPath", headerName: "Path", editable: false, sortable: false, flex: 1 },
 ];
 
 export default function List() {
@@ -57,7 +48,8 @@ export default function List() {
         loading={isScanning}
         rows={rows}
         components={{
-          LoadingOverlay: CustomLoadingOverlay,
+          Toolbar,
+          LoadingOverlay,
         }}
         // autoPageSize
         checkboxSelection
