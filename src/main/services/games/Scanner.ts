@@ -3,21 +3,25 @@ import fs from "fs/promises";
 import { ipcMain, dialog } from "electron";
 import { CancelablePromise, cancelable } from "cancelable-promise";
 import PowerShell from "../windows/PowerShell";
-import Store from "../Store";
+import ConfigStore from "../store/ConfigStore";
 import { ScannedModel } from "src/models/ScannedModel";
 import { uninstallPatterns } from "../../utils/files";
+import CacheStore from "../store/CacheStore";
 
 interface GamesScannerProps {
-  store: Store;
+  configStore: ConfigStore;
+  cacheStore: CacheStore;
   shell: PowerShell;
 }
 
 export default class GamesScanner {
-  private store: Store;
-  private shell: PowerShell;
+  private readonly configStore: ConfigStore;
+  private readonly cacheStore: CacheStore;
+  private readonly shell: PowerShell;
 
   constructor(props: GamesScannerProps) {
-    this.store = props.store;
+    this.configStore = props.configStore;
+    this.cacheStore = props.cacheStore;
     this.shell = props.shell;
 
     this.initListeners = this.initListeners.bind(this);
@@ -113,49 +117,62 @@ export default class GamesScanner {
       });
 
       try {
-        const listPromise = cancelable(fs.readdir(directory));
+        const listPromise = cancelable(fs.readdir(directory, { withFileTypes: true }));
         promises.push(listPromise);
         const list = await listPromise;
 
         if (list.length === 0) return resolve(results);
 
-        for (let file of list) {
-          file = path.resolve(directory, file);
+        for (const file of list) {
+          const fileName = path.normalize(`${directory}${path.sep}${file.name}`);
 
           try {
-            const statPromise = cancelable(fs.stat(file));
-            promises.push(statPromise);
-            const stat = await statPromise;
-
-            if (stat && stat.isDirectory()) {
-              const newFilesPromise = this._walkDirectory(file);
+            if (file.isDirectory()) {
+              const newFilesPromise = this._walkDirectory(fileName);
               promises.push(newFilesPromise);
               const newFiles = await newFilesPromise;
-
               results.push(...newFiles);
 
               continue;
             }
 
-            if (stat && stat.isFile()) {
-              const extension = path.extname(file);
+            if (file.isFile()) {
+              const extension = path.extname(fileName);
 
               if (extension === ".exe") {
                 const isUninstallFile = uninstallPatterns.some((item) =>
-                  new RegExp(item, "i").test(file)
+                  new RegExp(item, "i").test(fileName)
                 );
 
                 if (isUninstallFile) continue;
 
-                const infoPromise = this.shell.getFileInfo(file);
+                const cachedData = await this.cacheStore.load("scanned", fileName);
+
+                if (cachedData) {
+                  const scannedData: ScannedModel = {
+                    ...cachedData.data,
+                    icon: cachedData.media[0] || null,
+                  };
+                  results.push(scannedData);
+                  continue;
+                }
+
+                const infoPromise = this.shell.getFileInfo(fileName);
                 promises.push(infoPromise);
                 const info = await infoPromise;
 
                 if (info) {
-                  results.push({ executionPath: file, ...info });
-                  continue;
+                  const newData2Cache = { executionPath: fileName, name: info.name };
+
+                  results.push({ executionPath: fileName, ...info });
+
+                  await this.cacheStore.save(
+                    "scanned",
+                    fileName,
+                    newData2Cache,
+                    info.icon ?? undefined
+                  );
                 }
-                results.push({ executionPath: file, icon: null, name: null });
               }
             }
           } catch (error) {

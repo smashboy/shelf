@@ -8,12 +8,9 @@ export default class PowerShell {
     noProfile: true,
   });
 
-  constructor() {
-    this.getFileInfo = this.getFileInfo.bind(this);
-  }
-
   async runCommands(...commands: string[]) {
-    commands.map((command) => this.shell.addCommand(command));
+    commands.forEach((command) => this.shell.addCommand(command));
+
     const response = await this.shell.invoke();
 
     return response;
@@ -28,27 +25,24 @@ export default class PowerShell {
           if (dataPromise) dataPromise.cancel();
         });
 
-        this.shell.addCommand("Add-Type -AssemblyName System.Drawing");
-        this.shell.addCommand(`$Path = "${filePath}"`);
-        this.shell.addCommand("$Icon = [System.Drawing.Icon]::ExtractAssociatedIcon($Path)");
-        this.shell.addCommand("$MemoryStream = New-Object System.IO.MemoryStream");
-        this.shell.addCommand("$Icon.save($MemoryStream)");
-        this.shell.addCommand("$Bytes = $MemoryStream.ToArray()");
-        this.shell.addCommand("$MemoryStream.Flush()");
-        this.shell.addCommand("$MemoryStream.Dispose()");
-        this.shell.addCommand("$Image = [convert]::ToBase64String($Bytes)");
-
-        this.shell.addCommand(`$VersionInfo = dir "${filePath}" | Select-Object VersionInfo`);
-        this.shell.addCommand("$obj = New-Object -TypeName psobject");
-        this.shell.addCommand(
-          "$obj | Add-Member -MemberType NoteProperty -Name image -Value $Image"
+        dataPromise = cancelable(
+          this.runCommands(
+            "Add-Type -AssemblyName System.Drawing",
+            `$Path = "${filePath}"`,
+            "$Icon = [System.Drawing.Icon]::ExtractAssociatedIcon($Path)",
+            "$MemoryStream = New-Object System.IO.MemoryStream",
+            "$Icon.save($MemoryStream)",
+            "$Bytes = $MemoryStream.ToArray()",
+            "$MemoryStream.Flush()",
+            "$MemoryStream.Dispose()",
+            "$Image = [convert]::ToBase64String($Bytes)",
+            `$VersionInfo = dir "${filePath}" | Select-Object VersionInfo`,
+            "$obj = New-Object -TypeName psobject",
+            "$obj | Add-Member -MemberType NoteProperty -Name image -Value $Image",
+            "$obj | Add-Member -MemberType NoteProperty -Name versionInfo -Value $VersionInfo",
+            "$obj | ConvertTo-JSON"
+          )
         );
-        this.shell.addCommand(
-          "$obj | Add-Member -MemberType NoteProperty -Name versionInfo -Value $VersionInfo"
-        );
-        this.shell.addCommand("$obj | ConvertTo-JSON");
-
-        dataPromise = cancelable(this.shell.invoke());
         const data = await dataPromise;
 
         if (!data) return resolve(null);

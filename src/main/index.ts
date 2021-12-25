@@ -1,9 +1,10 @@
 import os from "os";
 import { join } from "path";
 import { app, BrowserWindow } from "electron";
-import Store from "./services/Store";
+import ConfigStore from "./services/store/ConfigStore";
 import GamesScanner from "./services/games/Scanner";
 import PowerShell from "./services/windows/PowerShell";
+import CacheStore from "./services/store/CacheStore";
 
 const isWin7 = os.release().startsWith("6.1");
 if (isWin7) app.disableHardwareAcceleration();
@@ -13,14 +14,16 @@ if (!app.requestSingleInstanceLock()) {
   process.exit(0);
 }
 
-const store = new Store();
+const configStore = new ConfigStore();
+const cacheStore = new CacheStore();
+
 const shell = new PowerShell();
 const scanner = new GamesScanner({
-  store,
+  configStore,
+  cacheStore,
   shell,
 });
 
-store.init();
 scanner.initListeners();
 
 let win: BrowserWindow | null = null;
