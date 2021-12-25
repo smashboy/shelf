@@ -1,8 +1,9 @@
 import { createContext, useCallback, useContext, useState } from "react";
+import { ScannedModel } from "src/models/ScannedModel";
 
 type ScannerStore = {
   isScanning: boolean;
-  result: any;
+  result: ScannedModel[];
   scan: () => Promise<void>;
   cancel: () => void;
 };
@@ -11,18 +12,21 @@ const ScannerStoreContext = createContext<ScannerStore | null>(null);
 
 export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }) => {
   const [isScanning, setIsScanning] = useState(false);
-  const [result, setResult] = useState([]);
+  const [result, setResult] = useState<ScannedModel[]>([]);
 
   const handleScan = useCallback(async () => {
     try {
       const { invoke } = window.bridge.ipcRenderer;
       setIsScanning(true);
 
-      const result = await invoke("direcotry-scanner");
+      const newData = await invoke("direcotry-scanner");
 
       setIsScanning(false);
 
-      console.log(result);
+      if (!newData) return;
+      if (newData.length === 0) return;
+
+      setResult(newData);
     } catch (error) {
       console.error(error);
     }

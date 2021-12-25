@@ -25,13 +25,13 @@ export default class CacheStore extends BaseStore {
         try {
           const bucketPath = this.buildBucket(bucket);
 
-          const mediaPath = `${bucketPath}${path.sep}${crypto.randomUUID()}.webp`;
+          const mediaPath = `${bucketPath}${path.sep}${crypto.randomUUID()}.png`;
 
           model.mediaPaths.push(mediaPath);
 
           await fsPromise.writeFile(
             mediaPath,
-            media.replace(/^data:image\/webp;base64,/, ""),
+            media.replace(/^data:image\/png;base64,/, ""),
             "base64"
           );
         } catch (error) {
@@ -72,7 +72,7 @@ export default class CacheStore extends BaseStore {
       try {
         const promises = mediaPaths.map((item) => fsPromise.readFile(item, { encoding: "base64" }));
 
-        media = (await Promise.all(promises)).map((item) => `data:image/webp;base64,${item}`);
+        media = (await Promise.all(promises)).map((item) => `data:image/png;base64,${item}`);
       } catch (error) {
         console.error(error);
       }

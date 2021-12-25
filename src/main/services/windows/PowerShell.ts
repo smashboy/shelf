@@ -49,7 +49,7 @@ export default class PowerShell {
 
         const parsedData = JSON.parse(data);
 
-        const image = parsedData?.image ? `data:image/webp;base64,${parsedData.image}` : null;
+        const image = parsedData?.image ? `data:image/png;base64,${parsedData.image}` : null;
 
         const versionInfo = parsedData?.versionInfo?.VersionInfo;
 
