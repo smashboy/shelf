@@ -16,7 +16,7 @@ export default class GamesScanner {
   private readonly cacheStore: CacheStore;
   private readonly shell: PowerShell;
 
-  private readonly _walkMaxDepth = 7;
+  private readonly _maxWalkDepth = 7;
 
   constructor(props: GamesScannerProps) {
     this.cacheStore = props.cacheStore;
@@ -29,7 +29,7 @@ export default class GamesScanner {
     let scanProgramsPromise: CancelablePromise | null = null;
     let scanDirectoryPromise: CancelablePromise | null = null;
 
-    ipcMain.handle("games-scanner", async () => {
+    ipcMain.handle("programs-scanner", async () => {
       const promise = this.scanPrograms();
 
       scanProgramsPromise = promise;
@@ -37,6 +37,12 @@ export default class GamesScanner {
       const programs = await promise;
 
       return programs;
+    });
+
+    ipcMain.handle("file-scanner", async () => {
+      const program = await this.scanFile();
+
+      return program;
     });
 
     ipcMain.handle("direcotry-scanner", async () => {
@@ -49,7 +55,7 @@ export default class GamesScanner {
       return filesList;
     });
 
-    ipcMain.on("cancel-games-scanner", () => {
+    ipcMain.on("cancel-programs-scanner", () => {
       if (scanProgramsPromise) scanProgramsPromise.cancel();
     });
 
@@ -130,6 +136,35 @@ export default class GamesScanner {
     });
   }
 
+  private async scanFile() {
+    const response = await dialog.showOpenDialog({
+      title: "Select file...",
+      buttonLabel: "Select",
+      properties: ["openFile", "dontAddToRecent"],
+      filters: [{ name: "Execution file", extensions: ["exe"] }],
+    });
+
+    if (response.canceled) return;
+
+    const filePath = response.filePaths[0];
+
+    if (!filePath) return;
+
+    const fileInfo = await this.shell.getFileInfo(filePath);
+
+    if (fileInfo) {
+      const name = fileInfo.name || path.basename(filePath).replace(path.extname(filePath), "");
+
+      const model: ScannedModel = {
+        name,
+        icon: fileInfo.icon,
+        executionPath: filePath,
+      };
+
+      return model;
+    }
+  }
+
   private _walkDirectory(directory: string, currentDepth: number) {
     return new CancelablePromise(async (resolve, _, onCancel) => {
       const results: ScannedModel[] = [];
@@ -151,7 +186,7 @@ export default class GamesScanner {
           const filePath = path.normalize(`${directory}${path.sep}${dirent.name}`);
 
           try {
-            if (dirent.isDirectory() && currentDepth <= this._walkMaxDepth) {
+            if (dirent.isDirectory() && currentDepth <= this._maxWalkDepth) {
               const newFilesPromise = this._walkDirectory(filePath, currentDepth + 1);
               promises.push(newFilesPromise);
               const newFiles = await newFilesPromise;
@@ -161,7 +196,7 @@ export default class GamesScanner {
             }
 
             if (dirent.isFile() && isValidExeFile(filePath)) {
-              const cachedData = await this.cacheStore.load("icons", filePath);
+              const cachedData = await this.cacheStore.load("execution-files", filePath);
 
               if (cachedData) {
                 const scannedData: ScannedModel = {
@@ -184,7 +219,7 @@ export default class GamesScanner {
                 results.push({ executionPath: filePath, name, icon: info.icon });
 
                 await this.cacheStore.save(
-                  "icons",
+                  "execution-files",
                   filePath,
                   newData2Cache,
                   info.icon ?? undefined

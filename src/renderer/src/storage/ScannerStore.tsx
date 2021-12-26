@@ -8,6 +8,7 @@ type ScannerStore = {
   cancelDetect: () => Promise<void>;
   scan: () => Promise<void>;
   cancelScan: () => Promise<void>;
+  scanFile: () => Promise<void>;
 };
 
 const ScannerStoreContext = createContext<ScannerStore | null>(null);
@@ -21,7 +22,7 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
       const { invoke } = window.bridge.ipcRenderer;
       setIsScanning(true);
 
-      const newData = await invoke("games-scanner");
+      const newData = await invoke("programs-scanner");
 
       setIsScanning(false);
 
@@ -37,12 +38,25 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
     try {
       const { send } = window.bridge.ipcRenderer;
 
-      await send("cancel-games-scanner");
+      await send("cancel-programs-scanner");
 
       setIsScanning(false);
     } catch (error) {
       console.error(error);
     }
+  }, []);
+
+  const handleScanFile = useCallback(async () => {
+    const { invoke } = window.bridge.ipcRenderer;
+    setIsScanning(true);
+
+    const newData = await invoke("file-scanner");
+
+    setIsScanning(false);
+
+    if (!newData) return;
+
+    console.log(newData);
   }, []);
 
   const handleScan = useCallback(async () => {
@@ -83,6 +97,7 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
         cancelDetect: handleCancelDetect,
         cancelScan: handleCancelScan,
         scan: handleScan,
+        scanFile: handleScanFile,
       }}
     >
       {children}
