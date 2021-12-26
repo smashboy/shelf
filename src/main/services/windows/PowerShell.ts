@@ -1,6 +1,5 @@
 import { CancelablePromise, cancelable } from "cancelable-promise";
 import Shell from "node-powershell";
-import { ScannedModel } from "src/models/ScannedModel";
 
 export default class PowerShell {
   private shell = new Shell({
@@ -61,6 +60,41 @@ export default class PowerShell {
         resolve({ icon: image, name });
       } catch (error) {
         // console.error("GET FILE ERROR:", error);
+        resolve(null);
+      }
+    });
+  }
+
+  async getFileIcon(filePath: string) {
+    return new CancelablePromise(async (resolve, _, onCancel) => {
+      try {
+        let dataPromise: CancelablePromise | null = null;
+
+        onCancel(() => {
+          if (dataPromise) dataPromise.cancel();
+        });
+
+        dataPromise = cancelable(
+          this.runCommands(
+            "Add-Type -AssemblyName System.Drawing",
+            `$Path = "${filePath}"`,
+            "$Icon = [System.Drawing.Icon]::ExtractAssociatedIcon($Path)",
+            "$MemoryStream = New-Object System.IO.MemoryStream",
+            "$Icon.save($MemoryStream)",
+            "$Bytes = $MemoryStream.ToArray()",
+            "$MemoryStream.Flush()",
+            "$MemoryStream.Dispose()",
+            "[convert]::ToBase64String($Bytes)"
+          )
+        );
+        let image = await dataPromise;
+
+        if (!image) return resolve(null);
+
+        image = image ? `data:image/png;base64,${image}` : null;
+
+        resolve(image);
+      } catch (error) {
         resolve(null);
       }
     });

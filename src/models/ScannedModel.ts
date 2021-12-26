@@ -1,5 +1,5 @@
 export interface ScannedModel {
-  name: string | null;
+  name: string;
   icon: string | null;
   executionPath: string;
 }

@@ -14,12 +14,11 @@ if (!app.requestSingleInstanceLock()) {
   process.exit(0);
 }
 
-const configStore = new ConfigStore();
+new ConfigStore();
 const cacheStore = new CacheStore();
 
 const shell = new PowerShell();
 const scanner = new GamesScanner({
-  configStore,
   cacheStore,
   shell,
 });

@@ -3,24 +3,22 @@ import fs from "fs/promises";
 import { ipcMain, dialog } from "electron";
 import { CancelablePromise, cancelable } from "cancelable-promise";
 import PowerShell from "../windows/PowerShell";
-import ConfigStore from "../store/ConfigStore";
 import { ScannedModel } from "src/models/ScannedModel";
-import { uninstallPatterns } from "../../utils/files";
+import { isValidExeFile } from "../../utils/files";
 import CacheStore from "../store/CacheStore";
 
 interface GamesScannerProps {
-  configStore: ConfigStore;
   cacheStore: CacheStore;
   shell: PowerShell;
 }
 
 export default class GamesScanner {
-  private readonly configStore: ConfigStore;
   private readonly cacheStore: CacheStore;
   private readonly shell: PowerShell;
 
+  private readonly _walkMaxDepth = 7;
+
   constructor(props: GamesScannerProps) {
-    this.configStore = props.configStore;
     this.cacheStore = props.cacheStore;
     this.shell = props.shell;
 
@@ -61,13 +59,39 @@ export default class GamesScanner {
   }
 
   private scanPrograms() {
-    return new CancelablePromise(async (resolve) => {
+    return new CancelablePromise(async (resolve, _, onCancel) => {
       try {
         const result = await this.shell.runCommands(
           `Get-ItemProperty HKLM:\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\* | Select-Object | ConvertTo-JSON`
         );
 
-        resolve(JSON.parse(result));
+        const data = JSON.parse(result);
+
+        const programs: ScannedModel[] = [];
+
+        for (const item of data) {
+          if (item?.DisplayName && item?.DisplayIcon) {
+            const name = item.DisplayName;
+            const executionPath = path.normalize(item.DisplayIcon);
+
+            if (isValidExeFile(executionPath)) {
+              try {
+                const icon = await this.shell.getFileIcon(executionPath);
+                const program: ScannedModel = {
+                  name,
+                  executionPath,
+                  icon,
+                };
+
+                programs.push(program);
+              } catch (error) {
+                continue;
+              }
+            }
+          }
+        }
+
+        resolve(programs);
       } catch (error) {
         // console.error("SCAN PROGRAMS ERROR", error);
       }
@@ -95,7 +119,7 @@ export default class GamesScanner {
 
         if (!directory) return resolve(undefined);
 
-        listPromise = this._walkDirectory(directory);
+        listPromise = this._walkDirectory(directory, 1);
 
         const list = await listPromise;
 
@@ -106,7 +130,7 @@ export default class GamesScanner {
     });
   }
 
-  private _walkDirectory(directory: string) {
+  private _walkDirectory(directory: string, currentDepth: number) {
     return new CancelablePromise(async (resolve, _, onCancel) => {
       const results: ScannedModel[] = [];
 
@@ -123,12 +147,12 @@ export default class GamesScanner {
 
         if (list.length === 0) return resolve(results);
 
-        for (const file of list) {
-          const fileName = path.normalize(`${directory}${path.sep}${file.name}`);
+        for (const dirent of list) {
+          const filePath = path.normalize(`${directory}${path.sep}${dirent.name}`);
 
           try {
-            if (file.isDirectory()) {
-              const newFilesPromise = this._walkDirectory(fileName);
+            if (dirent.isDirectory() && currentDepth <= this._walkMaxDepth) {
+              const newFilesPromise = this._walkDirectory(filePath, currentDepth + 1);
               promises.push(newFilesPromise);
               const newFiles = await newFilesPromise;
               results.push(...newFiles);
@@ -136,43 +160,35 @@ export default class GamesScanner {
               continue;
             }
 
-            if (file.isFile()) {
-              const extension = path.extname(fileName);
+            if (dirent.isFile() && isValidExeFile(filePath)) {
+              const cachedData = await this.cacheStore.load("icons", filePath);
 
-              if (extension === ".exe") {
-                const isUninstallFile = uninstallPatterns.some((item) =>
-                  new RegExp(item, "i").test(fileName)
+              if (cachedData) {
+                const scannedData: ScannedModel = {
+                  ...cachedData.data,
+                  icon: cachedData.media[0] || null,
+                };
+                results.push(scannedData);
+                continue;
+              }
+
+              const infoPromise = this.shell.getFileInfo(filePath);
+              promises.push(infoPromise);
+              const info = await infoPromise;
+
+              if (info) {
+                const name =
+                  info.name || path.basename(filePath).replace(path.extname(filePath), "");
+                const newData2Cache = { executionPath: filePath, name };
+
+                results.push({ executionPath: filePath, name, icon: info.icon });
+
+                await this.cacheStore.save(
+                  "icons",
+                  filePath,
+                  newData2Cache,
+                  info.icon ?? undefined
                 );
-
-                if (isUninstallFile) continue;
-
-                const cachedData = await this.cacheStore.load("scanned", fileName);
-
-                if (cachedData) {
-                  const scannedData: ScannedModel = {
-                    ...cachedData.data,
-                    icon: cachedData.media[0] || null,
-                  };
-                  results.push(scannedData);
-                  continue;
-                }
-
-                const infoPromise = this.shell.getFileInfo(fileName);
-                promises.push(infoPromise);
-                const info = await infoPromise;
-
-                if (info) {
-                  const newData2Cache = { executionPath: fileName, name: info.name };
-
-                  results.push({ executionPath: fileName, ...info });
-
-                  await this.cacheStore.save(
-                    "scanned",
-                    fileName,
-                    newData2Cache,
-                    info.icon ?? undefined
-                  );
-                }
               }
             }
           } catch (error) {
