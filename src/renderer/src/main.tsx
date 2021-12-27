@@ -5,13 +5,16 @@ import App from "./App";
 import darkTheme from "./ui/themes/darkTheme";
 import "./storage/ElectronStore";
 import { ViewStoreProvider } from "./storage/ViewStore";
+import { SnackbarProvider } from "notistack";
 
 ReactDOM.render(
   <React.StrictMode>
     <ThemeProvider theme={darkTheme}>
-      <ViewStoreProvider>
-        <App />
-      </ViewStoreProvider>
+      <SnackbarProvider maxSnack={3}>
+        <ViewStoreProvider>
+          <App />
+        </ViewStoreProvider>
+      </SnackbarProvider>
     </ThemeProvider>
   </React.StrictMode>,
   document.getElementById("root"),

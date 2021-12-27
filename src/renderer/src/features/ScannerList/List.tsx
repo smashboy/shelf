@@ -32,7 +32,7 @@ export default function List() {
 
   const rows = useMemo(
     () =>
-      result.map(({ icon, name, executionPath }, index) => ({
+      Object.values(result).map(({ icon, name, executionPath }, index) => ({
         id: index,
         icon,
         name,

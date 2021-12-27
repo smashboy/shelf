@@ -3,7 +3,7 @@ import { ScannedModel } from "src/models/ScannedModel";
 
 type ScannerStore = {
   isScanning: boolean;
-  result: ScannedModel[];
+  result: Record<string, ScannedModel>;
   detect: () => Promise<void>;
   cancelDetect: () => Promise<void>;
   scan: () => Promise<void>;
@@ -15,7 +15,26 @@ const ScannerStoreContext = createContext<ScannerStore | null>(null);
 
 export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }) => {
   const [isScanning, setIsScanning] = useState(false);
-  const [result, setResult] = useState<ScannedModel[]>([]);
+  const [result, setResult] = useState<Record<string, ScannedModel>>({});
+
+  const _addNewPrograms = useCallback(
+    (programs: ScannedModel[]) => {
+      if (programs.length === 0) return;
+
+      let newProgramsCounter = 0;
+      const newPrograms: Record<string, ScannedModel> = {};
+
+      for (const program of programs) {
+        if (!result[program.executionPath]) {
+          newProgramsCounter++;
+          newPrograms[program.executionPath] = program;
+        }
+      }
+
+      setResult((prevState) => ({ ...prevState, ...newPrograms }));
+    },
+    [result]
+  );
 
   const handleDetect = useCallback(async () => {
     try {
@@ -26,9 +45,9 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
 
       setIsScanning(false);
 
-      if (!newData || newData?.length === 0) return;
+      if (!newData) return;
 
-      setResult(newData);
+      _addNewPrograms(newData);
     } catch (error) {
       console.error(error);
     }
@@ -42,6 +61,7 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
 
       setIsScanning(false);
     } catch (error) {
+      setIsScanning(false);
       console.error(error);
     }
   }, []);
@@ -56,7 +76,7 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
 
     if (!newData) return;
 
-    console.log(newData);
+    _addNewPrograms([newData]);
   }, []);
 
   const handleScan = useCallback(async () => {
@@ -68,10 +88,11 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
 
       setIsScanning(false);
 
-      if (!newData || newData?.length === 0) return;
+      if (!newData) return;
 
-      setResult(newData);
+      _addNewPrograms(newData);
     } catch (error) {
+      setIsScanning(false);
       console.error(error);
     }
   }, []);
@@ -84,6 +105,7 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
 
       setIsScanning(false);
     } catch (error) {
+      setIsScanning(false);
       console.error(error);
     }
   }, []);
