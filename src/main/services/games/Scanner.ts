@@ -125,7 +125,7 @@ export default class GamesScanner {
 
         if (!directory) return resolve(undefined);
 
-        listPromise = this._walkDirectory(directory, 1);
+        listPromise = this._walkDirectory(directory);
 
         const list = await listPromise;
 
@@ -165,7 +165,7 @@ export default class GamesScanner {
     }
   }
 
-  private _walkDirectory(directory: string, currentDepth: number) {
+  private _walkDirectory(directory: string, currentDepth: number = 0) {
     return new CancelablePromise(async (resolve, _, onCancel) => {
       const results: ScannedModel[] = [];
 
@@ -186,7 +186,7 @@ export default class GamesScanner {
           const filePath = path.normalize(`${directory}${path.sep}${dirent.name}`);
 
           try {
-            if (dirent.isDirectory() && currentDepth <= this._maxWalkDepth) {
+            if (dirent.isDirectory() && currentDepth < this._maxWalkDepth) {
               const newFilesPromise = this._walkDirectory(filePath, currentDepth + 1);
               promises.push(newFilesPromise);
               const newFiles = await newFilesPromise;
