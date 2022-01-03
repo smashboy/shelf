@@ -1,11 +1,11 @@
 import { useScanner } from "@/storage/ScannerStore";
-import { styled, LinearProgress, Box } from "@mui/material";
-import { DataGrid, GridColDef, GridOverlay } from "@mui/x-data-grid";
-import { useMemo } from "react";
+import { styled, Box } from "@mui/material";
+import { DataGrid, GridColDef } from "@mui/x-data-grid";
+
 import LoadingOverlay from "./LoadingOverlay";
 import Toolbar from "./Toolbar";
 
-const Image = styled("img")(() => ({
+export const ProgramIcon = styled("img")(() => ({
   width: 20,
   height: 20,
 }));
@@ -19,7 +19,7 @@ const columns: GridColDef[] = [
     sortable: false,
     renderCell: (params) => (
       <Box sx={{ width: "100%", display: "flex", justifyContent: "center", alignItems: "center" }}>
-        <Image src={params.value} alt="" />
+        <ProgramIcon src={params.value} alt="" />
       </Box>
     ),
   },
@@ -27,19 +27,8 @@ const columns: GridColDef[] = [
   { field: "executionPath", headerName: "Path", editable: false, sortable: false, flex: 1 },
 ];
 
-export default function List() {
-  const { result, isScanning } = useScanner();
-
-  const rows = useMemo(
-    () =>
-      Object.values(result).map(({ icon, name, executionPath }, index) => ({
-        id: index,
-        icon,
-        name,
-        executionPath,
-      })),
-    [result]
-  );
+export default function ScannedProgramsList() {
+  const { isScanning, selectModels, rows, selectedRows } = useScanner();
 
   return (
     <Box sx={{ height: "50vh" }}>
@@ -47,6 +36,9 @@ export default function List() {
         columns={columns}
         loading={isScanning}
         rows={rows}
+        selectionModel={selectedRows}
+        // @ts-ignore
+        onSelectionModelChange={(newSelectionModel) => selectModels(newSelectionModel)}
         components={{
           Toolbar,
           LoadingOverlay,

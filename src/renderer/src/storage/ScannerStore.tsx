@@ -1,21 +1,65 @@
-import { createContext, useCallback, useContext, useState } from "react";
+import useNotifications from "@/hooks/useNotifications";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { ScannedModel } from "src/models/ScannedModel";
+import { useView, View } from "./ViewStore";
 
 type ScannerStore = {
+  open: boolean;
+  view: ScannerView;
   isScanning: boolean;
   result: Record<string, ScannedModel>;
+  selected: Record<string, ScannedModel>;
+  rows: ScannedModel[];
+  selectedRows: number[];
+  searchGames: () => Promise<void>;
+  selectModels: (selectedIndexes: number[]) => void;
   detect: () => Promise<void>;
   cancelDetect: () => Promise<void>;
   scan: () => Promise<void>;
   cancelScan: () => Promise<void>;
   scanFile: () => Promise<void>;
+  setView: (view: ScannerView) => void;
+  close: () => void;
 };
+
+export enum ScannerView {
+  PROGRAMS_SCANNER,
+  GAMES_FINDER,
+}
+
+export const scannerSteps = [ScannerView.PROGRAMS_SCANNER, ScannerView.GAMES_FINDER];
 
 const ScannerStoreContext = createContext<ScannerStore | null>(null);
 
 export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }) => {
+  const { view: appView, setView: setAppView } = useView();
+  const { notify } = useNotifications();
+
+  const [open, setOpen] = useState(false);
+  const [view, setView] = useState(ScannerView.PROGRAMS_SCANNER);
   const [isScanning, setIsScanning] = useState(false);
   const [result, setResult] = useState<Record<string, ScannedModel>>({});
+  const [selectedModels, setSelectedModels] = useState<Record<string, ScannedModel>>({});
+
+  useEffect(() => {
+    if (appView === View.WELCOME) setOpen(true);
+  }, [appView]);
+
+  const rows = useMemo(
+    () =>
+      Object.values(result).map(({ icon, name, executionPath }, index) => ({
+        id: index,
+        icon,
+        name,
+        executionPath,
+      })),
+    [result]
+  );
+
+  const selectedRows = useMemo(
+    () => rows.filter((row) => selectedModels[row.executionPath]).map(({ id }) => id),
+    [rows, selectedModels]
+  );
 
   const _addNewPrograms = useCallback(
     (programs: ScannedModel[]) => {
@@ -31,7 +75,9 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
         }
       }
 
-      setResult((prevState) => ({ ...prevState, ...newPrograms }));
+      notify(`Added ${newProgramsCounter} new programs!`);
+
+      if (newProgramsCounter > 0) setResult((prevState) => ({ ...prevState, ...newPrograms }));
     },
     [result]
   );
@@ -51,7 +97,7 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
     } catch (error) {
       console.error(error);
     }
-  }, []);
+  }, [result]);
 
   const handleCancelDetect = useCallback(async () => {
     try {
@@ -77,7 +123,7 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
     if (!newData) return;
 
     _addNewPrograms([newData]);
-  }, []);
+  }, [result]);
 
   const handleScan = useCallback(async () => {
     try {
@@ -95,7 +141,7 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
       setIsScanning(false);
       console.error(error);
     }
-  }, []);
+  }, [result]);
 
   const handleCancelScan = useCallback(async () => {
     try {
@@ -110,16 +156,63 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
     }
   }, []);
 
+  const handleSelectModels = useCallback(
+    (selectedIndexes: number[]) => {
+      const updatedSelection: Record<string, ScannedModel> = {};
+
+      for (const index of selectedIndexes) {
+        const program = rows[index];
+
+        if (!program) continue;
+
+        updatedSelection[program.executionPath] = program;
+      }
+
+      setSelectedModels(updatedSelection);
+    },
+    [selectedModels, rows]
+  );
+
+  const handleClose = () =>
+    useCallback(() => {
+      setAppView(View.MAIN);
+      setOpen(false);
+    }, []);
+
+  const handleView = useCallback((view: ScannerView) => setView(view), []);
+
+  const handleSearchGames = useCallback(async () => {
+    try {
+      const { invoke } = window.bridge.ipcRenderer;
+
+      await invoke(
+        "search-games",
+        Object.values(selectedModels).map(({ name }) => name)
+      );
+    } catch (error) {
+      console.error(error);
+    }
+  }, [selectedModels]);
+
   return (
     <ScannerStoreContext.Provider
       value={{
+        open,
+        view,
         isScanning,
         result,
+        rows,
+        selectedRows,
+        selected: selectedModels,
+        searchGames: handleSearchGames,
         detect: handleDetect,
         cancelDetect: handleCancelDetect,
         cancelScan: handleCancelScan,
         scan: handleScan,
         scanFile: handleScanFile,
+        selectModels: handleSelectModels,
+        setView: handleView,
+        close: handleClose,
       }}
     >
       {children}

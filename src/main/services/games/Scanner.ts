@@ -22,10 +22,10 @@ export default class GamesScanner {
     this.cacheStore = props.cacheStore;
     this.shell = props.shell;
 
-    this.initListeners = this.initListeners.bind(this);
+    this.initListeners();
   }
 
-  initListeners() {
+  private initListeners() {
     let scanProgramsPromise: CancelablePromise | null = null;
     let scanDirectoryPromise: CancelablePromise | null = null;
 

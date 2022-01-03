@@ -5,6 +5,7 @@ import ConfigStore from "./services/store/ConfigStore";
 import GamesScanner from "./services/games/Scanner";
 import PowerShell from "./services/windows/PowerShell";
 import CacheStore from "./services/store/CacheStore";
+import IGDBClient from "./services/games/IGDBClient";
 
 const isWin7 = os.release().startsWith("6.1");
 if (isWin7) app.disableHardwareAcceleration();
@@ -18,12 +19,11 @@ new ConfigStore();
 const cacheStore = new CacheStore();
 
 const shell = new PowerShell();
-const scanner = new GamesScanner({
+new GamesScanner({
   cacheStore,
   shell,
 });
-
-scanner.initListeners();
+new IGDBClient(cacheStore);
 
 let win: BrowserWindow | null = null;
 
