@@ -6,21 +6,25 @@ import PowerShell from "../windows/PowerShell";
 import { ScannedModel } from "src/models/ScannedModel";
 import { isValidExeFile } from "../../utils/files";
 import CacheStore from "../store/CacheStore";
+import IGDBClient, { SearchGamesProps } from "./IGDBClient";
 
 interface GamesScannerProps {
   cacheStore: CacheStore;
   shell: PowerShell;
+  igdb: IGDBClient;
 }
 
 export default class GamesScanner {
   private readonly cacheStore: CacheStore;
   private readonly shell: PowerShell;
+  private readonly igdb: IGDBClient;
 
   private readonly _maxWalkDepth = 7;
 
   constructor(props: GamesScannerProps) {
     this.cacheStore = props.cacheStore;
     this.shell = props.shell;
+    this.igdb = props.igdb;
 
     this.initListeners();
   }
@@ -53,6 +57,11 @@ export default class GamesScanner {
       const filesList = await promise;
 
       return filesList;
+    });
+
+    ipcMain.handle("search-games", async (_, programs: SearchGamesProps) => {
+      const games = await this.igdb.searchGames(programs);
+      return games;
     });
 
     ipcMain.on("cancel-programs-scanner", () => {
@@ -201,7 +210,7 @@ export default class GamesScanner {
               if (cachedData) {
                 const scannedData: ScannedModel = {
                   ...cachedData.data,
-                  icon: cachedData.media[0] || null,
+                  icon: cachedData.media?.icon || null,
                 };
                 results.push(scannedData);
                 continue;
@@ -222,7 +231,7 @@ export default class GamesScanner {
                   "execution-files",
                   filePath,
                   newData2Cache,
-                  info.icon ?? undefined
+                  info.icon ? { icon: info.icon } : undefined
                 );
               }
             }

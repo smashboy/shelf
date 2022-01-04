@@ -4,14 +4,20 @@ import Input from "@/ui/components/Input";
 import { GridToolbarContainer } from "@mui/x-data-grid";
 
 export default function Toolbar() {
-  const { scan, detect, scanFile } = useScanner();
+  const { scan, detect, scanFile, isLoading } = useScanner();
 
   return (
     <GridToolbarContainer>
-      <Button onClick={scanFile}>Browse...</Button>
-      <Button onClick={scan}>Scan Directory</Button>
-      <Button onClick={detect}>Detect installed</Button>
-      <Input size="small" />
+      <Button onClick={scanFile} disabled={isLoading}>
+        Browse...
+      </Button>
+      <Button onClick={scan} disabled={isLoading}>
+        Scan Directory
+      </Button>
+      <Button onClick={detect} disabled={isLoading}>
+        Detect installed
+      </Button>
+      <Input size="small" disabled={isLoading} />
     </GridToolbarContainer>
   );
 }

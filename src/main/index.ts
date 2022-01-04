@@ -17,13 +17,14 @@ if (!app.requestSingleInstanceLock()) {
 
 new ConfigStore();
 const cacheStore = new CacheStore();
-
 const shell = new PowerShell();
+const igdb = new IGDBClient(cacheStore);
+
 new GamesScanner({
   cacheStore,
   shell,
+  igdb,
 });
-new IGDBClient(cacheStore);
 
 let win: BrowserWindow | null = null;
 

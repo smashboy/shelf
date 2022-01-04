@@ -1,16 +1,18 @@
 import useNotifications from "@/hooks/useNotifications";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { ScannedModel } from "src/models/ScannedModel";
+import { GameBaseModel } from "src/models/GameModel";
 import { useView, View } from "./ViewStore";
 
 type ScannerStore = {
   open: boolean;
   view: ScannerView;
-  isScanning: boolean;
+  isLoading: boolean;
   result: Record<string, ScannedModel>;
-  selected: Record<string, ScannedModel>;
+  selected: Record<string, ScannedModel & { selectedGame?: GameBaseModel }>;
   rows: ScannedModel[];
   selectedRows: number[];
+  games: Record<string, GameBaseModel[]>;
   searchGames: () => Promise<void>;
   selectModels: (selectedIndexes: number[]) => void;
   detect: () => Promise<void>;
@@ -19,15 +21,15 @@ type ScannerStore = {
   cancelScan: () => Promise<void>;
   scanFile: () => Promise<void>;
   setView: (view: ScannerView) => void;
+  selectGame: (key: string, game: GameBaseModel) => void;
   close: () => void;
 };
 
 export enum ScannerView {
   PROGRAMS_SCANNER,
   GAMES_FINDER,
+  FINISH_SCAN,
 }
-
-export const scannerSteps = [ScannerView.PROGRAMS_SCANNER, ScannerView.GAMES_FINDER];
 
 const ScannerStoreContext = createContext<ScannerStore | null>(null);
 
@@ -37,9 +39,12 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
 
   const [open, setOpen] = useState(false);
   const [view, setView] = useState(ScannerView.PROGRAMS_SCANNER);
-  const [isScanning, setIsScanning] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<Record<string, ScannedModel>>({});
-  const [selectedModels, setSelectedModels] = useState<Record<string, ScannedModel>>({});
+  const [selectedPrograms, setSelectedPrograms] = useState<
+    Record<string, ScannedModel & { selectedGame?: GameBaseModel }>
+  >({});
+  const [games, setGames] = useState<Record<string, GameBaseModel[]>>({});
 
   useEffect(() => {
     if (appView === View.WELCOME) setOpen(true);
@@ -57,8 +62,8 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
   );
 
   const selectedRows = useMemo(
-    () => rows.filter((row) => selectedModels[row.executionPath]).map(({ id }) => id),
-    [rows, selectedModels]
+    () => rows.filter((row) => selectedPrograms[row.executionPath]).map(({ id }) => id),
+    [rows, selectedPrograms]
   );
 
   const _addNewPrograms = useCallback(
@@ -85,11 +90,11 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
   const handleDetect = useCallback(async () => {
     try {
       const { invoke } = window.bridge.ipcRenderer;
-      setIsScanning(true);
+      setIsLoading(true);
 
       const newData = await invoke("programs-scanner");
 
-      setIsScanning(false);
+      setIsLoading(false);
 
       if (!newData) return;
 
@@ -105,20 +110,20 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
 
       await send("cancel-programs-scanner");
 
-      setIsScanning(false);
+      setIsLoading(false);
     } catch (error) {
-      setIsScanning(false);
+      setIsLoading(false);
       console.error(error);
     }
   }, []);
 
   const handleScanFile = useCallback(async () => {
     const { invoke } = window.bridge.ipcRenderer;
-    setIsScanning(true);
+    setIsLoading(true);
 
     const newData = await invoke("file-scanner");
 
-    setIsScanning(false);
+    setIsLoading(false);
 
     if (!newData) return;
 
@@ -128,17 +133,17 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
   const handleScan = useCallback(async () => {
     try {
       const { invoke } = window.bridge.ipcRenderer;
-      setIsScanning(true);
+      setIsLoading(true);
 
       const newData = await invoke("direcotry-scanner");
 
-      setIsScanning(false);
+      setIsLoading(false);
 
       if (!newData) return;
 
       _addNewPrograms(newData);
     } catch (error) {
-      setIsScanning(false);
+      setIsLoading(false);
       console.error(error);
     }
   }, [result]);
@@ -149,9 +154,9 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
 
       await send("cancel-directory-scanner");
 
-      setIsScanning(false);
+      setIsLoading(false);
     } catch (error) {
-      setIsScanning(false);
+      setIsLoading(false);
       console.error(error);
     }
   }, []);
@@ -168,9 +173,9 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
         updatedSelection[program.executionPath] = program;
       }
 
-      setSelectedModels(updatedSelection);
+      setSelectedPrograms(updatedSelection);
     },
-    [selectedModels, rows]
+    [selectedPrograms, rows]
   );
 
   const handleClose = () =>
@@ -185,25 +190,46 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
     try {
       const { invoke } = window.bridge.ipcRenderer;
 
-      await invoke(
+      setIsLoading(true);
+
+      const data = await invoke(
         "search-games",
-        Object.values(selectedModels).map(({ name }) => name)
+        Object.values(selectedPrograms).map(({ name, executionPath }) => ({
+          name,
+          cacheKey: executionPath,
+        }))
       );
+
+      setGames(data);
+
+      setIsLoading(false);
     } catch (error) {
+      setIsLoading(false);
       console.error(error);
     }
-  }, [selectedModels]);
+  }, [selectedPrograms]);
+
+  const handleSelectGame = useCallback(
+    (key: string, game: GameBaseModel) =>
+      setSelectedPrograms((prevState) => ({
+        ...prevState,
+        [key]: { ...prevState[key], selectedGame: game },
+      })),
+    []
+  );
 
   return (
     <ScannerStoreContext.Provider
       value={{
         open,
         view,
-        isScanning,
+        isLoading,
         result,
         rows,
         selectedRows,
-        selected: selectedModels,
+        games,
+        selected: selectedPrograms,
+        selectGame: handleSelectGame,
         searchGames: handleSearchGames,
         detect: handleDetect,
         cancelDetect: handleCancelDetect,

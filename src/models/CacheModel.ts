@@ -1,9 +1,9 @@
 export interface CacheModel {
   data: any;
-  mediaPaths: string[];
+  mediaPaths: Record<string, string>;
 }
 
 export interface CacheWithMediaModel {
   data: any;
-  media: string[];
+  media: Record<string, string>;
 }

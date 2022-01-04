@@ -14,7 +14,7 @@ export default defineConfig({
     minify: process.env.NODE_ENV === "production",
     emptyOutDir: true,
     rollupOptions: {
-      external: [...builtinModules, "electron", "igdb-api-node"],
+      external: [...builtinModules, "electron", "igdb-api-node", "node-fetch"],
       output: {
         entryFileNames: "[name].cjs",
       },

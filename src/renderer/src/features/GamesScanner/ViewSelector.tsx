@@ -8,7 +8,7 @@ import {
   Stepper,
   StepLabel,
 } from "@mui/material";
-import { scannerSteps, ScannerView, useScanner } from "@/storage/ScannerStore";
+import { ScannerView, useScanner } from "@/storage/ScannerStore";
 import ScannedProgramsList from "./ScannedProgramsList";
 import GamesFinderList from "./GamesFinderList";
 
@@ -39,6 +39,9 @@ export default function ViewSelector() {
         </Step>
         <Step>
           <StepLabel>Find Games</StepLabel>
+        </Step>
+        <Step>
+          <StepLabel>Complete Scan</StepLabel>
         </Step>
       </Stepper>
       <ViewSelectorContent />

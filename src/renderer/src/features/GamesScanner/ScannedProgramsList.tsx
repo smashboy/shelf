@@ -28,13 +28,13 @@ const columns: GridColDef[] = [
 ];
 
 export default function ScannedProgramsList() {
-  const { isScanning, selectModels, rows, selectedRows } = useScanner();
+  const { isLoading, selectModels, rows, selectedRows } = useScanner();
 
   return (
     <Box sx={{ height: "50vh" }}>
       <DataGrid
         columns={columns}
-        loading={isScanning}
+        loading={isLoading}
         rows={rows}
         selectionModel={selectedRows}
         // @ts-ignore

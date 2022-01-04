@@ -17,25 +17,33 @@ export default class CacheStore extends BaseStore {
     this.createStore();
   }
 
-  async save(bucket: string, key: string, data: Record<string, any>, media?: string) {
+  async save(
+    bucket: string,
+    key: string,
+    data: Record<string, any>,
+    media?: Record<string, string>
+  ) {
     try {
-      const model: CacheModel = { data, mediaPaths: [] };
+      const model: CacheModel = { data, mediaPaths: {} };
 
-      if (media) {
-        try {
-          const bucketPath = this.buildBucket(bucket);
+      if (media && Object.keys(media).length > 0) {
+        for (const key in media) {
+          try {
+            const item = media[key];
+            const bucketPath = this.buildBucket(bucket);
 
-          const mediaPath = `${bucketPath}${path.sep}${crypto.randomUUID()}.png`;
+            const mediaPath = `${bucketPath}${path.sep}${crypto.randomUUID()}.png`;
 
-          model.mediaPaths.push(mediaPath);
+            model.mediaPaths[key] = mediaPath;
 
-          await fsPromise.writeFile(
-            mediaPath,
-            media.replace(/^data:image\/png;base64,/, ""),
-            "base64"
-          );
-        } catch (error) {
-          console.error(error);
+            await fsPromise.writeFile(
+              mediaPath,
+              item.replace(/^data:image\/png;base64,/, ""),
+              "base64"
+            );
+          } catch (error) {
+            console.error(error);
+          }
         }
       }
 
@@ -66,15 +74,17 @@ export default class CacheStore extends BaseStore {
 
     const { mediaPaths, data } = cache;
 
-    let media: string[] = [];
+    let media: Record<string, string> = {};
 
-    if (mediaPaths.length > 0) {
-      try {
-        const promises = mediaPaths.map((item) => fsPromise.readFile(item, { encoding: "base64" }));
-
-        media = (await Promise.all(promises)).map((item) => `data:image/png;base64,${item}`);
-      } catch (error) {
-        console.error(error);
+    if (Object.keys(mediaPaths).length > 0) {
+      for (const key in mediaPaths) {
+        try {
+          const path = mediaPaths[key];
+          const downloaded = await fsPromise.readFile(path, { encoding: "base64" });
+          media[key] = `data:image/png;base64,${downloaded}`;
+        } catch (error) {
+          continue;
+        }
       }
     }
 

@@ -4,16 +4,16 @@ import LoadingButton from "@/ui/components/LoadingButton";
 import { Grid } from "@mui/material";
 
 export default function Header() {
-  const { scan, cancel, isScanning } = useScanner();
+  const { scan, cancel, isLoading } = useScanner();
 
   return (
     <Grid container>
       <Grid item xs={6}>
-        <LoadingButton onClick={scan} loading={isScanning}>
+        <LoadingButton onClick={scan} loading={isLoading}>
           Scan
         </LoadingButton>
       </Grid>
-      {isScanning && (
+      {isLoading && (
         <Grid item xs={6}>
           <Button onClick={cancel}>Cancel</Button>
         </Grid>

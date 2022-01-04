@@ -1,12 +1,27 @@
-export interface GameModelData {
-  name: string;
-  iconPath: string;
-  posterImagePath: string;
-  wallpaperPath: string;
-  platform: string;
-  executionCommand: string;
+export interface GameCoverModel {
+  hash: string;
+  width: number;
+  height: number;
+  data: string;
 }
 
-export interface GameModel {
-  data: GameModelData;
+export interface GameBaseModel {
+  id: number;
+  name: string;
+  slug: string;
+  hash: string;
+  cover: GameCoverModel | null;
+}
+
+export interface GameInfoModel {
+  totalRating: number;
+  totalRatingCount: number;
+  storyline: string;
+  summary: string;
+  websites: string[];
+  genres: string[];
+}
+
+export interface GameModel extends GameBaseModel, GameInfoModel {
+  relatedExecution?: string;
 }
