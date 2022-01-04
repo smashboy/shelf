@@ -7,29 +7,55 @@ export default function Footer() {
   const { selected, view, setView } = useScanner();
 
   const handleNext = useCallback(() => {
-    if (view === ScannerView.PROGRAMS_SCANNER) return setView(ScannerView.GAMES_FINDER);
+    switch (view) {
+      case ScannerView.PROGRAMS_SCANNER:
+        setView(ScannerView.GAMES_FINDER);
+        break;
+      case ScannerView.GAMES_FINDER:
+        setView(ScannerView.FINISH_SCAN);
+        break;
+      default:
+        break;
+    }
   }, [view]);
 
-  const handleBack = useCallback(() => setView(ScannerView.PROGRAMS_SCANNER), []);
+  const handleBack = useCallback(() => {
+    switch (view) {
+      case ScannerView.FINISH_SCAN:
+        setView(ScannerView.GAMES_FINDER);
+        break;
+      case ScannerView.GAMES_FINDER:
+        setView(ScannerView.PROGRAMS_SCANNER);
+        break;
+      default:
+        break;
+    }
+  }, [view]);
 
   return (
     <DialogActions>
       <Button color="error" variant="contained">
         Close
       </Button>
-      {view === ScannerView.GAMES_FINDER && (
+      {view !== ScannerView.PROGRAMS_SCANNER && (
         <Button color="secondary" variant="contained" onClick={handleBack}>
           Back
         </Button>
       )}
-      <Button
-        color="primary"
-        variant="contained"
-        onClick={handleNext}
-        disabled={Object.keys(selected).length === 0}
-      >
-        Next
-      </Button>
+      {view !== ScannerView.FINISH_SCAN && (
+        <Button
+          color="primary"
+          variant="contained"
+          onClick={handleNext}
+          disabled={
+            (view === ScannerView.PROGRAMS_SCANNER && Object.keys(selected).length === 0) ||
+            (view === ScannerView.GAMES_FINDER &&
+              Object.values(selected).filter(({ selectedGame }) => selectedGame).length === 0)
+          }
+        >
+          Next
+        </Button>
+      )}
     </DialogActions>
   );
 }

@@ -26,14 +26,7 @@ export default function GamesScanner(props: GamesScannerProps) {
               </Typography>
             </Grid>
             <Grid item xs={12}>
-              <Grid container spacing={1}>
-                <Grid item xs={12}>
-                  <Alert severity="warning">Scanning large directories can take a long time.</Alert>
-                </Grid>
-                <Grid item xs={12}>
-                  <ViewSelector />
-                </Grid>
-              </Grid>
+              <ViewSelector />
             </Grid>
           </Grid>
         </DialogContent>

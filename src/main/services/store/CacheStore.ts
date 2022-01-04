@@ -54,7 +54,40 @@ export default class CacheStore extends BaseStore {
     }
   }
 
-  async load(bucket: string, key: string): Promise<CacheWithMediaModel | null> {
+  async update(
+    bucket: string,
+    key: string,
+    callback: (data: Record<string, any>) => Record<string, any>
+  ) {
+    let cache: CacheModel | null = null;
+
+    const memoryCache = this.memoryCache[bucket]?.[key] || null;
+    let memoryCacheExist = false;
+
+    if (memoryCache) {
+      cache = memoryCache;
+      memoryCacheExist = true;
+    } else {
+      const storeKey = `${bucket}.${key}`;
+      cache = this.get<CacheModel>(storeKey);
+    }
+
+    if (!cache) return;
+
+    const updatedCache: CacheModel = {
+      data: callback(cache.data),
+      mediaPaths: cache.mediaPaths,
+    };
+
+    this.setMemoryCache(bucket, key, updatedCache);
+    this.singleSet(`${bucket}.${key}`, updatedCache);
+  }
+
+  async load(
+    bucket: string,
+    key: string,
+    options?: { withoutMedia?: boolean }
+  ): Promise<CacheWithMediaModel | null> {
     let cache: CacheModel | null = null;
 
     const memoryCache = this.memoryCache[bucket]?.[key] || null;
@@ -74,12 +107,51 @@ export default class CacheStore extends BaseStore {
 
     const { mediaPaths, data } = cache;
 
+    let media = {};
+
+    if (!options?.withoutMedia) {
+      media = await this._loadMedia(mediaPaths);
+    }
+
+    return { data, media };
+  }
+
+  async loadBucket(bucket: string) {
+    let cache: Record<string, CacheModel> = {};
+
+    const memoryCache = this.memoryCache[bucket] || null;
+    let memoryCacheExist = false;
+
+    if (memoryCache) {
+      cache = memoryCache;
+      memoryCacheExist = true;
+    } else {
+      cache = this.get<Record<string, CacheModel>>(bucket);
+    }
+
+    if (!cache) return null;
+
+    if (!memoryCacheExist) this.setMemoryBucketCache(bucket, cache);
+
+    const data: Record<string, CacheWithMediaModel> = {};
+
+    for (const key in cache) {
+      const item = cache[key];
+      const media = await this._loadMedia(item.mediaPaths);
+
+      data[key] = { data: item.data, media };
+    }
+
+    return data;
+  }
+
+  private async _loadMedia(paths: Record<string, string>) {
     let media: Record<string, string> = {};
 
-    if (Object.keys(mediaPaths).length > 0) {
-      for (const key in mediaPaths) {
+    if (Object.keys(paths).length > 0) {
+      for (const key in paths) {
         try {
-          const path = mediaPaths[key];
+          const path = paths[key];
           const downloaded = await fsPromise.readFile(path, { encoding: "base64" });
           media[key] = `data:image/png;base64,${downloaded}`;
         } catch (error) {
@@ -88,12 +160,16 @@ export default class CacheStore extends BaseStore {
       }
     }
 
-    return { data, media };
+    return media;
   }
 
   private setMemoryCache(bucket: string, key: string, data: CacheModel) {
     this.memoryCache[bucket] = this.memoryCache[bucket] || {};
     this.memoryCache[bucket][key] = data;
+  }
+
+  private setMemoryBucketCache(bucket: string, data: Record<string, CacheModel>) {
+    this.memoryCache[bucket] = data;
   }
 
   private createStore() {

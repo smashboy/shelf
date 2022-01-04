@@ -225,7 +225,11 @@ export default class GamesScanner {
                   info.name || path.basename(filePath).replace(path.extname(filePath), "");
                 const newData2Cache = { executionPath: filePath, name };
 
-                results.push({ executionPath: filePath, name, icon: info.icon });
+                results.push({
+                  executionPath: filePath,
+                  name,
+                  icon: info.icon,
+                });
 
                 await this.cacheStore.save(
                   "execution-files",

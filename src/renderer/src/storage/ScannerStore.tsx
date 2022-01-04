@@ -52,11 +52,9 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
 
   const rows = useMemo(
     () =>
-      Object.values(result).map(({ icon, name, executionPath }, index) => ({
+      Object.values(result).map((program, index) => ({
         id: index,
-        icon,
-        name,
-        executionPath,
+        ...program,
       })),
     [result]
   );
@@ -194,9 +192,10 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
 
       const data = await invoke(
         "search-games",
-        Object.values(selectedPrograms).map(({ name, executionPath }) => ({
+        Object.values(selectedPrograms).map(({ name, executionPath, cachedGamesSearchSlugs }) => ({
           name,
-          cacheKey: executionPath,
+          key: executionPath,
+          cachedGamesSearchSlugs,
         }))
       );
 

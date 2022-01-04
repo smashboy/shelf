@@ -2,8 +2,13 @@ import igdb from "igdb-api-node";
 import fetch from "node-fetch";
 import CacheStore from "../store/CacheStore";
 import { GameBaseModel, GameCoverModel } from "src/models/GameModel";
+import { ScannedModel } from "src/models/ScannedModel";
 
-export type SearchGamesProps = Array<{ cacheKey: string; name: string }>;
+export type SearchGamesProps = Array<{
+  cachedGamesSearchSlugs?: string[];
+  key: string;
+  name: string;
+}>;
 
 export default class IGDBClient {
   private readonly client = igdb(
@@ -46,25 +51,32 @@ export default class IGDBClient {
 
   async searchGames(programs: SearchGamesProps) {
     const games: Record<string, GameBaseModel[]> = {};
+    const cachedGames = await this.cacheStore.loadBucket("games-base");
 
     for (const program of programs) {
+      console.log(program.key, program.cachedGamesSearchSlugs);
       try {
-        const cachedData = await this.cacheStore.load("games-base", program.cacheKey);
+        if (
+          cachedGames &&
+          program.cachedGamesSearchSlugs &&
+          program.cachedGamesSearchSlugs.length > 0
+        ) {
+          const loadedGames: GameBaseModel[] = [];
 
-        if (cachedData) {
-          const loadedGames: GameBaseModel[] = (cachedData.data.games as GameBaseModel[]).map(
-            ({ cover, ...otherProps }) => ({
-              ...otherProps,
-              cover: cover
-                ? {
-                    ...cover,
-                    data: cachedData.media[`cover-${otherProps.slug}`],
-                  }
-                : null,
-            })
-          );
+          for (const slug of program.cachedGamesSearchSlugs) {
+            const cachedGame = cachedGames[slug];
 
-          games[program.cacheKey] = loadedGames;
+            if (cachedGame) {
+              const data = cachedGame.data as GameBaseModel;
+
+              loadedGames.push({
+                ...data,
+                cover: data.cover ? { ...data.cover, data: cachedGame.media.cover } : null,
+              });
+            }
+          }
+
+          games[program.key] = loadedGames;
           continue;
         }
 
@@ -81,8 +93,7 @@ export default class IGDBClient {
 
         const loadedGames: GameBaseModel[] = [];
 
-        for (const index in gamesData) {
-          const game = gamesData[index];
+        for (const game of gamesData) {
           try {
             const coverRespose = await this.client
               .fields(["checksum", "width", "height", "image_id"])
@@ -90,6 +101,7 @@ export default class IGDBClient {
               .request("/covers");
 
             const coverData = coverRespose.data[0] || null;
+            let cover: GameCoverModel | null = null;
 
             if (coverData) {
               try {
@@ -101,58 +113,62 @@ export default class IGDBClient {
 
                 const base64 = Buffer.from(buffer).toString("base64");
 
-                const cover: GameCoverModel = {
+                cover = {
                   width: coverData.width,
                   height: coverData.height,
                   hash: coverData.checksum,
-                  data: base64,
+                  data: `data:image/png;base64,${base64}`,
                 };
-
-                loadedGames.push({
-                  id: game.id,
-                  name: game.name,
-                  slug: game.slug,
-                  hash: game.checksum,
-                  cover,
-                });
               } catch (error) {
-                loadedGames.push({
-                  id: game.id,
-                  name: game.name,
-                  slug: game.slug,
-                  hash: game.checksum,
-                  cover: null,
-                });
-                console.error(error);
+                // console.error(error);
               }
             }
+
+            const baseModel = {
+              id: game.id,
+              name: game.name,
+              slug: game.slug,
+              hash: game.checksum,
+            };
+
+            const loadedModel = { ...baseModel, cover };
+
+            loadedGames.push(loadedModel);
+
+            const cacheModel = {
+              ...baseModel,
+              cover: cover
+                ? {
+                    hash: cover.hash,
+                    width: cover.width,
+                    height: cover.height,
+                  }
+                : null,
+            };
+
+            await this.cacheStore.save(
+              "games-base",
+              game.slug,
+              cacheModel,
+              cover ? { cover: cover.data } : undefined
+            );
           } catch (error) {
-            console.error(error);
+            // console.error(error);
             continue;
           }
         }
 
-        const mediaCache: Record<string, string> = {};
+        await this.cacheStore.update("execution-files", program.key, (prevCache) => ({
+          ...prevCache,
+          cachedGamesSearchSlugs: Array.from(
+            new Set([
+              ...(prevCache.cachedGamesSearchSlugs || []),
+              ...loadedGames.map((game) => game.slug),
+            ])
+          ),
+        }));
 
-        loadedGames.forEach((game) => {
-          if (game.cover) {
-            mediaCache[`cover-${game.slug}`] = game.cover.data;
-          }
-        });
-
-        games[program.cacheKey] = loadedGames;
-
-        await this.cacheStore.save(
-          "games-base",
-          program.cacheKey,
-          {
-            games: loadedGames.map(({ cover, ...otherProps }) => ({
-              ...otherProps,
-              cover: cover ? { width: cover.width, height: cover.height, hash: cover.hash } : null,
-            })),
-          },
-          mediaCache
-        );
+        games[program.key] = loadedGames;
       } catch (error) {
         // console.error(error);
         continue;

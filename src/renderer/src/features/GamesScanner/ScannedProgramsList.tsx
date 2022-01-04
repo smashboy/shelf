@@ -1,5 +1,6 @@
 import { useScanner } from "@/storage/ScannerStore";
-import { styled, Box } from "@mui/material";
+import Alert from "@/ui/components/Alert";
+import { styled, Box, Grid } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 
 import LoadingOverlay from "./LoadingOverlay";
@@ -31,24 +32,31 @@ export default function ScannedProgramsList() {
   const { isLoading, selectModels, rows, selectedRows } = useScanner();
 
   return (
-    <Box sx={{ height: "50vh" }}>
-      <DataGrid
-        columns={columns}
-        loading={isLoading}
-        rows={rows}
-        selectionModel={selectedRows}
-        // @ts-ignore
-        onSelectionModelChange={(newSelectionModel) => selectModels(newSelectionModel)}
-        components={{
-          Toolbar,
-          LoadingOverlay,
-        }}
-        // autoPageSize
-        checkboxSelection
-        disableSelectionOnClick
-        disableColumnMenu
-        hideFooter
-      />
-    </Box>
+    <Grid container spacing={1}>
+      <Grid item xs={12}>
+        <Alert severity="warning">Scanning large directories can take a long time.</Alert>
+      </Grid>
+      <Grid item xs={12}>
+        <Box sx={{ height: "50vh" }}>
+          <DataGrid
+            columns={columns}
+            loading={isLoading}
+            rows={rows}
+            selectionModel={selectedRows}
+            // @ts-ignore
+            onSelectionModelChange={(newSelectionModel) => selectModels(newSelectionModel)}
+            components={{
+              Toolbar,
+              LoadingOverlay,
+            }}
+            // autoPageSize
+            checkboxSelection
+            disableSelectionOnClick
+            disableColumnMenu
+            hideFooter
+          />
+        </Box>
+      </Grid>
+    </Grid>
   );
 }

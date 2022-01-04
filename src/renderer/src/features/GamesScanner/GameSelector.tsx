@@ -57,7 +57,7 @@ export default function GameSelector(props: GameSelectorProps) {
   return (
     <>
       <Box display="flex" width="100%" justifyContent="center" alignItems="center">
-        <IconButton color="secondary" disabled={games.length === 0} onClick={handleOpen}>
+        <IconButton color="secondary" onClick={handleOpen}>
           <Badge badgeContent={games.length} color="primary">
             <AddIcon />
           </Badge>
