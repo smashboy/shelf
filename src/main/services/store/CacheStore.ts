@@ -54,11 +54,7 @@ export default class CacheStore extends BaseStore {
     }
   }
 
-  async update(
-    bucket: string,
-    key: string,
-    callback: (data: Record<string, any>) => Record<string, any>
-  ) {
+  async update(bucket: string, key: string, callback: (data: any) => any) {
     let cache: CacheModel | null = null;
 
     const memoryCache = this.memoryCache[bucket]?.[key] || null;
