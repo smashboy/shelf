@@ -4,7 +4,7 @@ import crypto from "crypto";
 import fsPromise from "fs/promises";
 import { app, dialog } from "electron";
 import BaseStore from "./BaseStore";
-import { CacheModel, CacheWithMediaModel } from "src/models/CacheModel";
+import type { CacheModel, CacheWithMediaModel } from "src/models/CacheModel";
 
 export default class CacheStore extends BaseStore {
   private readonly memoryCache: Record<string, Record<string, CacheModel>> = {};
@@ -47,14 +47,14 @@ export default class CacheStore extends BaseStore {
         }
       }
 
-      this.setMemoryCache(bucket, key, model);
+      this._setMemoryCache(bucket, key, model);
       this.singleSet(`${bucket}.${key}`, model);
     } catch (error) {
       console.error(error);
     }
   }
 
-  async update(bucket: string, key: string, callback: (data: any) => any) {
+  async update<T = any>(bucket: string, key: string, callback: (data: T) => T) {
     let cache: CacheModel | null = null;
 
     const memoryCache = this.memoryCache[bucket]?.[key] || null;
@@ -75,15 +75,15 @@ export default class CacheStore extends BaseStore {
       mediaPaths: cache.mediaPaths,
     };
 
-    this.setMemoryCache(bucket, key, updatedCache);
+    this._setMemoryCache(bucket, key, updatedCache);
     this.singleSet(`${bucket}.${key}`, updatedCache);
   }
 
-  async load(
+  async load<T = any>(
     bucket: string,
     key: string,
     options?: { withoutMedia?: boolean }
-  ): Promise<CacheWithMediaModel | null> {
+  ): Promise<CacheWithMediaModel<T> | null> {
     let cache: CacheModel | null = null;
 
     const memoryCache = this.memoryCache[bucket]?.[key] || null;
@@ -99,15 +99,13 @@ export default class CacheStore extends BaseStore {
 
     if (!cache) return null;
 
-    if (!memoryCacheExist) this.setMemoryCache(bucket, key, cache);
+    if (!memoryCacheExist) this._setMemoryCache(bucket, key, cache);
 
     const { mediaPaths, data } = cache;
 
     let media = {};
 
-    if (!options?.withoutMedia) {
-      media = await this._loadMedia(mediaPaths);
-    }
+    if (!options?.withoutMedia) media = await this._loadMedia(mediaPaths);
 
     return { data, media };
   }
@@ -127,7 +125,7 @@ export default class CacheStore extends BaseStore {
 
     if (!cache) return null;
 
-    if (!memoryCacheExist) this.setMemoryBucketCache(bucket, cache);
+    if (!memoryCacheExist) this._setMemoryBucketCache(bucket, cache);
 
     const data: Record<string, CacheWithMediaModel> = {};
 
@@ -159,12 +157,12 @@ export default class CacheStore extends BaseStore {
     return media;
   }
 
-  private setMemoryCache(bucket: string, key: string, data: CacheModel) {
+  private _setMemoryCache(bucket: string, key: string, data: CacheModel) {
     this.memoryCache[bucket] = this.memoryCache[bucket] || {};
     this.memoryCache[bucket][key] = data;
   }
 
-  private setMemoryBucketCache(bucket: string, data: Record<string, CacheModel>) {
+  private _setMemoryBucketCache(bucket: string, data: Record<string, CacheModel>) {
     this.memoryCache[bucket] = data;
   }
 

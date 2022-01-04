@@ -3,7 +3,7 @@ import fs from "fs/promises";
 import { ipcMain, dialog } from "electron";
 import { CancelablePromise, cancelable } from "cancelable-promise";
 import PowerShell from "../windows/PowerShell";
-import { ScannedModel } from "src/models/ScannedModel";
+import type { ScannedModel } from "src/models/ScannedModel";
 import { isValidExeFile } from "../../utils/files";
 import CacheStore from "../store/CacheStore";
 import IGDBClient, { SearchGamesProps } from "./IGDBClient";
@@ -74,7 +74,7 @@ export default class GamesScanner {
   }
 
   private scanPrograms() {
-    return new CancelablePromise(async (resolve, _, onCancel) => {
+    return new CancelablePromise(async (resolve) => {
       try {
         const result = await this.shell.runCommands(
           `Get-ItemProperty HKLM:\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\* | Select-Object | ConvertTo-JSON`

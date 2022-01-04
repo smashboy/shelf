@@ -3,7 +3,7 @@ export interface CacheModel {
   mediaPaths: Record<string, string>;
 }
 
-export interface CacheWithMediaModel {
-  data: any;
+export interface CacheWithMediaModel<T = any> {
+  data: T;
   media: Record<string, string>;
 }

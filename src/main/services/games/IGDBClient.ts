@@ -1,8 +1,7 @@
 import igdb from "igdb-api-node";
 import fetch from "node-fetch";
 import CacheStore from "../store/CacheStore";
-import { GameBaseModel, GameCoverModel } from "src/models/GameModel";
-import { ScannedModel } from "src/models/ScannedModel";
+import type { GameBaseModel, GameCoverModel } from "src/models/GameModel";
 
 export type SearchGamesProps = Array<{
   cachedGamesSearchSlugs?: string[];
@@ -54,7 +53,6 @@ export default class IGDBClient {
     const cachedGames = await this.cacheStore.loadBucket("games-base");
 
     for (const program of programs) {
-      console.log(program.key, program.cachedGamesSearchSlugs);
       try {
         if (
           cachedGames &&
