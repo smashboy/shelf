@@ -1,9 +1,18 @@
 import { Backdrop, Box, Divider, Grid, Stack, styled, Typography } from "@mui/material";
 import Carousel from "react-material-ui-carousel";
 import { useGame } from "@/storage/GameStore";
+import { makeStyles } from "@mui/styles";
 import { useCallback, useState } from "react";
 
+const useStyles = makeStyles({
+  carouselRoot: {
+    width: "600px",
+  },
+});
+
 export default function InfoSection() {
+  const classes = useStyles();
+
   const { loading, info, game } = useGame();
 
   const [image, setImage] = useState<string | null>(null);
@@ -17,8 +26,15 @@ export default function InfoSection() {
         <Grid container sx={{ paddingTop: 10 }}>
           <Grid item xs={6}></Grid>
           <Grid container item xs={6} spacing={2} justifyContent="center" flexWrap="wrap">
-            <Grid item xs={12}>
-              <Carousel>
+            <Grid container item xs={12} justifyContent="center">
+              <Carousel
+                className={classes.carouselRoot}
+                navButtonsProps={{
+                  style: {
+                    opacity: 1,
+                  },
+                }}
+              >
                 {[...info.screenshots, ...info.artworks].map((media) => (
                   <img
                     onClick={() => handleShowImage(media.data)}
