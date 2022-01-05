@@ -15,8 +15,10 @@
   "dependencies": {
     "@emotion/react": "^11.7.1",
     "@emotion/styled": "^11.6.0",
+    "@mui/icons-material": "^5.2.5",
     "@mui/lab": "^5.0.0-alpha.61",
     "@mui/material": "^5.2.5",
+    "@mui/styles": "^5.2.3",
     "@mui/x-data-grid": "^5.2.1",
     "cancelable-promise": "^4.2.1",
     "igdb-api-node": "^5.0.1",
@@ -25,7 +27,8 @@
     "notistack": "^2.0.3",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
-    "react-icons": "^4.3.1"
+    "react-icons": "^4.3.1",
+    "react-material-ui-carousel": "^3.1.1"
   },
   "devDependencies": {
     "@types/igdb-api-node": "^5.0.0",

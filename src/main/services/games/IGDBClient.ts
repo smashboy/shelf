@@ -61,10 +61,14 @@ export default class IGDBClient {
           "screenshots",
           "storyline",
           "summary",
-          "videos",
-          "websites",
           "genres",
+          "websites",
           "artworks",
+          // TODO
+          "tags",
+          "videos",
+          "first_release_date",
+          "involved_companies",
         ])
         .where(`id = ${gameId}`)
         .request("/games");
@@ -100,7 +104,7 @@ export default class IGDBClient {
       gameInfo.genres = await this.loadGenres(cachedModel.genreIds);
       gameInfo.websites = await this.loadWebsites(cachedModel.websiteIds);
       gameInfo.screenshots = await this.loadSreenshots(cachedModel.screenshotIds);
-      gameInfo.artworks = await this.loadSreenshots(cachedModel.artworkIds);
+      gameInfo.artworks = await this.loadArtworks(cachedModel.artworkIds);
 
       await this.cacheStore.save("games-info", gameSlug, cachedModel);
 
@@ -134,6 +138,9 @@ export default class IGDBClient {
         const data = response.data[0] || null;
 
         if (!data) continue;
+
+        // t_thumb_widescreen_large
+        // t_original
 
         const imageResponse = await fetch(
           `https://images.igdb.com/igdb/image/upload/t_original/${data.image_id}.png`
@@ -198,7 +205,7 @@ export default class IGDBClient {
         if (!data) continue;
 
         const imageResponse = await fetch(
-          `https://images.igdb.com/igdb/image/upload/t_screenshot_huge/${data.image_id}.png`
+          `https://images.igdb.com/igdb/image/upload/t_original/${data.image_id}.png`
         );
 
         const buffer = await imageResponse.arrayBuffer();

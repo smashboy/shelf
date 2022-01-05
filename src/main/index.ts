@@ -36,6 +36,7 @@ let win: BrowserWindow | null = null;
 async function mainWin() {
   win = new BrowserWindow({
     title: "Main window",
+    autoHideMenuBar: true,
     webPreferences: {
       preload: join(__dirname, "../preload/index.cjs"),
     },
