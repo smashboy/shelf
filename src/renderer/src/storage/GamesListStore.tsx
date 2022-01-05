@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import type { GameBaseModel } from "src/models/GameModel";
 import { useView, View } from "./ViewStore";
 
@@ -19,7 +19,7 @@ export const GamesListStoreProvider = ({ children }: { children: React.ReactNode
     if (view === View.MAIN) handleLoadGames();
   }, [view]);
 
-  const handleLoadGames = async () => {
+  const handleLoadGames = useCallback(async () => {
     try {
       const { invoke } = window.bridge.ipcRenderer;
 
@@ -34,7 +34,7 @@ export const GamesListStoreProvider = ({ children }: { children: React.ReactNode
       setLoading(false);
       console.error(error);
     }
-  };
+  }, []);
 
   return (
     <GamesListStoreContext.Provider value={{ games, loading }}>

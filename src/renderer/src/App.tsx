@@ -1,4 +1,5 @@
 import { CssBaseline } from "@mui/material";
+import { GameStoreProvider } from "./storage/GameStore";
 import GameView from "./views/GameView";
 import LoadingView from "./views/LoadingView";
 import MainView from "./views/MainView";
@@ -9,8 +10,10 @@ export default function App() {
     <>
       <CssBaseline />
       <LoadingView />
-      <MainView />
-      <GameView />
+      <GameStoreProvider>
+        <MainView />
+        <GameView />
+      </GameStoreProvider>
       <WelcomeView />
     </>
   );

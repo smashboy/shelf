@@ -1,4 +1,15 @@
-export interface GameCoverModel {
+export interface GenreModel {
+  hash: string;
+  name: string;
+}
+
+export interface WebsiteModel {
+  hash: string;
+  trusted: boolean;
+  url: string;
+}
+
+export interface MediaModel {
   hash: string;
   width: number;
   height: number;
@@ -10,16 +21,28 @@ export interface GameBaseModel {
   name: string;
   slug: string;
   hash: string;
-  cover: GameCoverModel | null;
+  cover: MediaModel | null;
 }
 
-export interface GameInfoModel {
+export interface GameInfoBaseModel {
   totalRating: number;
   totalRatingCount: number;
   storyline: string;
   summary: string;
-  websites: string[];
-  genres: string[];
+}
+
+export interface GameInfoCachedModel extends GameInfoBaseModel {
+  websiteIds: number[];
+  genreIds: number[];
+  screenshotIds: number[];
+  artworkIds: number[];
+}
+
+export interface GameInfoModel extends GameInfoBaseModel {
+  websites: WebsiteModel[];
+  genres: GenreModel[];
+  screenshots: MediaModel[];
+  artworks: MediaModel[];
 }
 
 export interface GameModel extends GameBaseModel, GameInfoModel {

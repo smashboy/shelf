@@ -22,6 +22,7 @@ const shell = new PowerShell();
 const igdb = new IGDBClient(cacheStore);
 const manager = new GamesManager({
   cacheStore,
+  igdb,
 });
 
 new GamesScanner({

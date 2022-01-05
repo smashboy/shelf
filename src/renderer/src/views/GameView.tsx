@@ -1,3 +1,5 @@
+import GameDialog from "@/features/GameDialog";
+
 export default function GameView() {
-  return <div />;
+  return <GameDialog />;
 }

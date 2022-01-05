@@ -1,8 +1,10 @@
 import { useGamesList } from "@/storage/GamesListStore";
+import { useGame } from "@/storage/GameStore";
 import GameCard from "@/ui/components/GameCard";
 import { Button, Grid, Typography } from "@mui/material";
 
 export default function List() {
+  const { setGame } = useGame();
   const { games } = useGamesList();
 
   return (
@@ -14,7 +16,7 @@ export default function List() {
           backdrop={
             <Grid container spacing={1} sx={{ paddingX: 0.5 }}>
               <Grid container item xs={12} justifyContent="center">
-                <Button variant="contained" sx={{ width: "75%" }}>
+                <Button onClick={() => setGame(game)} variant="contained" sx={{ width: "75%" }}>
                   Open
                 </Button>
               </Grid>

@@ -3,18 +3,24 @@ import { ipcMain } from "electron";
 import { CacheWithMediaModel } from "src/models/CacheModel";
 import type { GameBaseModel, UserGameModel } from "src/models/GameModel";
 import CacheStore from "../store/CacheStore";
+import IGDBClient from "./IGDBClient";
 
 export type AddGamesProps = Array<{ gameSlug: string; relatedExecution?: string }>;
+export type GetGameInfo = { gameSlug: string; gameId: number };
 
 interface GamesManagerProps {
   cacheStore: CacheStore;
+  igdb: IGDBClient;
 }
 
 export default class GamesManager {
   private readonly cacheStore: CacheStore;
 
+  private readonly igdb: IGDBClient;
+
   constructor(props: GamesManagerProps) {
     this.cacheStore = props.cacheStore;
+    this.igdb = props.igdb;
 
     this.initListeners();
   }
@@ -24,6 +30,11 @@ export default class GamesManager {
       const games = await this.getGamesList();
 
       return games;
+    });
+
+    ipcMain.handle("get-game-info", async (_, props: GetGameInfo) => {
+      const info = await this.getGameInfo(props);
+      return info;
     });
 
     ipcMain.handle("add-games", async (_, games: AddGamesProps) => {
@@ -38,6 +49,15 @@ export default class GamesManager {
       );
 
       await Promise.all(promises);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async getGameInfo(props: GetGameInfo) {
+    try {
+      const info = await this.igdb.getGameInfo(props.gameSlug, props.gameId);
+      return info;
     } catch (error) {
       console.error(error);
     }
