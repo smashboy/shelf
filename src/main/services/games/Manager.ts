@@ -1,7 +1,12 @@
 import crypto from "crypto";
 import { ipcMain } from "electron";
 import { CacheWithMediaModel } from "src/models/CacheModel";
-import type { GameBaseModel, UserGameModel } from "src/models/GameModel";
+import type {
+  GameBaseCachedModel,
+  GameBaseModel,
+  MediaModel,
+  UserGameModel,
+} from "src/models/GameModel";
 import CacheStore from "../store/CacheStore";
 import IGDBClient from "./IGDBClient";
 
@@ -69,25 +74,31 @@ export default class GamesManager {
 
       if (!userGames) return [];
 
-      const gamePromises: Array<Promise<CacheWithMediaModel<GameBaseModel> | null>> = [];
+      const games: GameBaseModel[] = [];
 
       for (const userGame of Object.values(userGames)) {
-        gamePromises.push(
-          this.cacheStore.load<GameBaseModel>("games-base", userGame.data.gameSlug)
+        const gameModel = await this.cacheStore.load<GameBaseCachedModel>(
+          "base",
+          userGame.data.gameSlug
         );
-      }
 
-      const games = (await Promise.all(gamePromises))
-        .filter((game) => game)
-        .map((game) => ({
-          ...game!.data,
-          cover: game!.data.cover
-            ? {
-                ...game!.data.cover,
-                data: game!.media.cover,
-              }
-            : null,
-        }));
+        if (gameModel) {
+          const coverModel = await this.cacheStore.load<MediaModel>(
+            "covers",
+            gameModel.data.id.toString()
+          );
+
+          games.push({
+            ...gameModel.data,
+            cover: coverModel
+              ? {
+                  ...coverModel.data,
+                  data: coverModel.media.cover,
+                }
+              : null,
+          });
+        }
+      }
 
       return games;
     } catch (error) {

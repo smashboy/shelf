@@ -16,11 +16,14 @@ export interface MediaModel {
   data: string;
 }
 
-export interface GameBaseModel {
+export interface GameBaseCachedModel {
   id: number;
   name: string;
   slug: string;
   hash: string;
+}
+
+export interface GameBaseModel extends GameBaseCachedModel {
   cover: MediaModel | null;
 }
 
