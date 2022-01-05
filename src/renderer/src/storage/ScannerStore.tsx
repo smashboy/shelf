@@ -11,8 +11,11 @@ type ScannerStore = {
   result: Record<string, ScannedModel>;
   selected: Record<string, ScannedModel & { selectedGame?: GameBaseModel }>;
   rows: ScannedModel[];
+  filter: string;
+  filteredRows: ScannedModel[];
   selectedRows: number[];
   games: Record<string, GameBaseModel[]>;
+  setFilter: (newFilter: string) => void;
   searchGames: () => Promise<void>;
   selectModels: (selectedIndexes: number[]) => void;
   detect: () => Promise<void>;
@@ -40,7 +43,9 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
   const [open, setOpen] = useState(false);
   const [view, setView] = useState(ScannerView.PROGRAMS_SCANNER);
   const [isLoading, setIsLoading] = useState(false);
+
   const [result, setResult] = useState<Record<string, ScannedModel>>({});
+  const [filter, setFilter] = useState("");
   const [selectedPrograms, setSelectedPrograms] = useState<
     Record<string, ScannedModel & { selectedGame?: GameBaseModel }>
   >({});
@@ -57,6 +62,18 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
         ...program,
       })),
     [result]
+  );
+
+  const filteredRows = useMemo(
+    () =>
+      rows.filter((row) => {
+        const filterLC = filter.toLowerCase();
+        return (
+          row.name.toLowerCase().indexOf(filterLC) > -1 ||
+          row.executionPath.toLowerCase().indexOf(filterLC) > -1
+        );
+      }),
+    [rows, filter]
   );
 
   const selectedRows = useMemo(
@@ -217,6 +234,8 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
     []
   );
 
+  const handleSetFilter = useCallback((newFilter: string) => setFilter(newFilter), []);
+
   return (
     <ScannerStoreContext.Provider
       value={{
@@ -225,9 +244,12 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
         isLoading,
         result,
         rows,
+        filteredRows,
         selectedRows,
         games,
+        filter,
         selected: selectedPrograms,
+        setFilter: handleSetFilter,
         selectGame: handleSelectGame,
         searchGames: handleSearchGames,
         detect: handleDetect,

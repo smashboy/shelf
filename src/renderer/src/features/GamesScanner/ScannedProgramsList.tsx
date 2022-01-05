@@ -29,7 +29,7 @@ const columns: GridColDef[] = [
 ];
 
 export default function ScannedProgramsList() {
-  const { isLoading, selectModels, rows, selectedRows } = useScanner();
+  const { isLoading, selectModels, rows, selectedRows, filteredRows, filter } = useScanner();
 
   return (
     <Grid container spacing={1}>
@@ -41,7 +41,7 @@ export default function ScannedProgramsList() {
           <DataGrid
             columns={columns}
             loading={isLoading}
-            rows={rows}
+            rows={filter ? filteredRows : rows}
             selectionModel={selectedRows}
             // @ts-ignore
             onSelectionModelChange={(newSelectionModel) => selectModels(newSelectionModel)}
