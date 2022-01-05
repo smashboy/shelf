@@ -1,11 +1,10 @@
 import useNotifications from "@/hooks/useNotifications";
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { ScannedModel } from "src/models/ScannedModel";
-import { GameBaseModel } from "src/models/GameModel";
+import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import type { ScannedModel } from "src/models/ScannedModel";
+import type { GameBaseModel } from "src/models/GameModel";
 import { useView, View } from "./ViewStore";
 
-type ScannerStore = {
-  open: boolean;
+interface ScannerStore {
   view: ScannerView;
   isLoading: boolean;
   result: Record<string, ScannedModel>;
@@ -15,6 +14,7 @@ type ScannerStore = {
   filteredRows: ScannedModel[];
   selectedRows: number[];
   games: Record<string, GameBaseModel[]>;
+  addGames: () => Promise<void>;
   setFilter: (newFilter: string) => void;
   searchGames: () => Promise<void>;
   selectModels: (selectedIndexes: number[]) => void;
@@ -25,8 +25,7 @@ type ScannerStore = {
   scanFile: () => Promise<void>;
   setView: (view: ScannerView) => void;
   selectGame: (key: string, game: GameBaseModel) => void;
-  close: () => void;
-};
+}
 
 export enum ScannerView {
   PROGRAMS_SCANNER,
@@ -37,10 +36,9 @@ export enum ScannerView {
 const ScannerStoreContext = createContext<ScannerStore | null>(null);
 
 export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }) => {
-  const { view: appView, setView: setAppView } = useView();
+  const { setView: setAppView } = useView();
   const { notify } = useNotifications();
 
-  const [open, setOpen] = useState(false);
   const [view, setView] = useState(ScannerView.PROGRAMS_SCANNER);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -50,10 +48,6 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
     Record<string, ScannedModel & { selectedGame?: GameBaseModel }>
   >({});
   const [games, setGames] = useState<Record<string, GameBaseModel[]>>({});
-
-  useEffect(() => {
-    if (appView === View.WELCOME) setOpen(true);
-  }, [appView]);
 
   const rows = useMemo(
     () =>
@@ -178,7 +172,6 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
 
   const handleSelectModels = useCallback(
     (selectedIndexes: number[]) => {
-      console.log(selectedIndexes);
       const updatedSelection: Record<string, ScannedModel> = {};
 
       for (const index of selectedIndexes) {
@@ -193,12 +186,6 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
     },
     [rows]
   );
-
-  const handleClose = () =>
-    useCallback(() => {
-      setAppView(View.MAIN);
-      setOpen(false);
-    }, []);
 
   const handleView = useCallback((view: ScannerView) => setView(view), []);
 
@@ -237,10 +224,30 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
 
   const handleSetFilter = useCallback((newFilter: string) => setFilter(newFilter), []);
 
+  const handleAddGames = useCallback(async () => {
+    try {
+      const { invoke } = window.bridge.ipcRenderer;
+
+      setIsLoading(true);
+
+      const games = Object.values(selectedPrograms).map((program) => ({
+        gameSlug: program.selectedGame!.slug,
+        relatedExecution: program.executionPath,
+      }));
+
+      await invoke("add-games", games);
+
+      setAppView(View.MAIN);
+
+      setIsLoading(false);
+    } catch (error) {
+      setIsLoading(false);
+    }
+  }, [selectedPrograms]);
+
   return (
     <ScannerStoreContext.Provider
       value={{
-        open,
         view,
         isLoading,
         result,
@@ -250,6 +257,7 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
         games,
         filter,
         selected: selectedPrograms,
+        addGames: handleAddGames,
         setFilter: handleSetFilter,
         selectGame: handleSelectGame,
         searchGames: handleSearchGames,
@@ -260,7 +268,6 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
         scanFile: handleScanFile,
         selectModels: handleSelectModels,
         setView: handleView,
-        close: handleClose,
       }}
     >
       {children}
@@ -271,7 +278,7 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
 export const useScanner = () => {
   const store = useContext(ScannerStoreContext);
 
-  if (!store) throw new Error("useScanner must be used within ");
+  if (!store) throw new Error("useScanner must be used within ScannerStoreProvider");
 
   return store;
 };

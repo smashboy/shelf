@@ -6,10 +6,11 @@ interface GameBaseCardProps {
   game: GameBaseModel;
   backdrop?: React.ReactNode;
   selected?: boolean;
+  gridSize?: number;
 }
 
-export default function GameBaseCard(props: GameBaseCardProps) {
-  const { game, backdrop, selected } = props;
+export default function GameCard(props: GameBaseCardProps) {
+  const { game, backdrop, selected, gridSize = 2 } = props;
 
   const [showBackdrop, setShowBackdrop] = useState(false);
 
@@ -19,7 +20,7 @@ export default function GameBaseCard(props: GameBaseCardProps) {
   const handleHideBackdrop = useCallback(() => setShowBackdrop(false), []);
 
   return (
-    <Grid item xs={3}>
+    <Grid item xs={gridSize}>
       <Card
         sx={{
           height: "100%",

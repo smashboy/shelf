@@ -6,6 +6,7 @@ import GamesScanner from "./services/games/Scanner";
 import PowerShell from "./services/windows/PowerShell";
 import CacheStore from "./services/store/CacheStore";
 import IGDBClient from "./services/games/IGDBClient";
+import GamesManager from "./services/games/Manager";
 
 const isWin7 = os.release().startsWith("6.1");
 if (isWin7) app.disableHardwareAcceleration();
@@ -19,6 +20,9 @@ new ConfigStore();
 const cacheStore = new CacheStore();
 const shell = new PowerShell();
 const igdb = new IGDBClient(cacheStore);
+const manager = new GamesManager({
+  cacheStore,
+});
 
 new GamesScanner({
   cacheStore,

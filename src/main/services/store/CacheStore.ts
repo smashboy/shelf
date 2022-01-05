@@ -110,7 +110,7 @@ export default class CacheStore extends BaseStore {
     return { data, media };
   }
 
-  async loadBucket(bucket: string) {
+  async loadBucket<T>(bucket: string) {
     let cache: Record<string, CacheModel> = {};
 
     const memoryCache = this.memoryCache[bucket] || null;
@@ -127,7 +127,7 @@ export default class CacheStore extends BaseStore {
 
     if (!memoryCacheExist) this._setMemoryBucketCache(bucket, cache);
 
-    const data: Record<string, CacheWithMediaModel> = {};
+    const data: Record<string, CacheWithMediaModel<T>> = {};
 
     for (const key in cache) {
       const item = cache[key];

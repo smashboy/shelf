@@ -1,13 +1,16 @@
-import { Container, CssBaseline } from "@mui/material";
+import { CssBaseline } from "@mui/material";
+import GameView from "./views/GameView";
 import LoadingView from "./views/LoadingView";
+import MainView from "./views/MainView";
 import WelcomeView from "./views/WelcomeView";
 
 export default function App() {
   return (
     <>
       <CssBaseline />
-      <Container></Container>
       <LoadingView />
+      <MainView />
+      <GameView />
       <WelcomeView />
     </>
   );

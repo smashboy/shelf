@@ -11,8 +11,6 @@ interface ToolbarProps {
 }
 
 export default function Toolbar(props: ToolbarProps) {
-  // const { value, onChange } = props;
-
   const { scan, detect, scanFile, isLoading } = useScanner();
 
   return (

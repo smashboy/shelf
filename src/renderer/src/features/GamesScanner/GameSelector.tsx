@@ -12,7 +12,7 @@ import {
 import IconButton from "@/ui/components/IconButton";
 import { MdAdd as AddIcon } from "react-icons/md";
 import { GameBaseModel } from "src/models/GameModel";
-import GameBaseCard from "@/ui/components/GameBaseCard";
+import GameCard from "@/ui/components/GameCard";
 import Button from "@/ui/components/Button";
 import { useScanner } from "@/storage/ScannerStore";
 
@@ -68,9 +68,10 @@ export default function GameSelector(props: GameSelectorProps) {
         <DialogContent>
           <Grid container spacing={2} justifyContent="center" sx={{ paddingY: 3 }}>
             {games.map((game) => (
-              <GameBaseCard
+              <GameCard
                 key={game.slug}
                 game={game}
+                gridSize={3}
                 selected={game.slug === selectedGame?.slug}
                 backdrop={
                   <Grid container spacing={1} sx={{ paddingX: 0.5 }}>

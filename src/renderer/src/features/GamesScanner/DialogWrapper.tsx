@@ -1,12 +1,11 @@
 import { Dialog } from "@mui/material";
-
-import { useScanner } from "@/storage/ScannerStore";
+import { useView, View } from "@/storage/ViewStore";
 
 export default function DialogWrapper({ children }: { children: React.ReactNode }) {
-  const { open } = useScanner();
+  const { view } = useView();
 
   return (
-    <Dialog open={open} maxWidth="lg" fullWidth>
+    <Dialog open={view === View.WELCOME} maxWidth="lg" fullWidth>
       {children}
     </Dialog>
   );

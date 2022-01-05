@@ -25,3 +25,8 @@ export interface GameInfoModel {
 export interface GameModel extends GameBaseModel, GameInfoModel {
   relatedExecution?: string;
 }
+
+export interface UserGameModel {
+  gameSlug: string;
+  relatedExecution?: string;
+}

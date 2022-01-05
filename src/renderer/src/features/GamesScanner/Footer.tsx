@@ -2,8 +2,10 @@ import { DialogActions } from "@mui/material";
 import Button from "@/ui/components/Button";
 import { ScannerView, useScanner } from "@/storage/ScannerStore";
 import { useCallback } from "react";
+import { useView, View } from "@/storage/ViewStore";
 
 export default function Footer() {
+  const { setView: setAppView } = useView();
   const { selected, view, setView } = useScanner();
 
   const handleNext = useCallback(() => {
@@ -32,9 +34,11 @@ export default function Footer() {
     }
   }, [view]);
 
+  const handleClose = useCallback(() => setAppView(View.MAIN), []);
+
   return (
     <DialogActions>
-      <Button color="error" variant="contained">
+      <Button onClick={handleClose} color="error" variant="contained">
         Close
       </Button>
       {view !== ScannerView.PROGRAMS_SCANNER && (
