@@ -4,8 +4,16 @@ import Input from "@/ui/components/Input";
 import { Grid } from "@mui/material";
 import { GridToolbarContainer } from "@mui/x-data-grid";
 
-export default function Toolbar() {
-  const { scan, detect, scanFile, isLoading, setFilter, filter } = useScanner();
+interface ToolbarProps {
+  clearSearch: () => void;
+  onChange: () => void;
+  value: string;
+}
+
+export default function Toolbar(props: ToolbarProps) {
+  // const { value, onChange } = props;
+
+  const { scan, detect, scanFile, isLoading } = useScanner();
 
   return (
     <GridToolbarContainer>
@@ -21,16 +29,16 @@ export default function Toolbar() {
             Detect installed
           </Button>
         </Grid>
-        <Grid item xs={3}>
+        {/* <Grid item xs={3}>
           <Input
-            value={filter}
-            onChange={(event) => setFilter(event.currentTarget.value)}
+            value={value}
+            onChange={onChange}
             size="small"
             placeholder="Search..."
             disabled={isLoading}
             fullWidth
           />
-        </Grid>
+        </Grid> */}
       </Grid>
     </GridToolbarContainer>
   );

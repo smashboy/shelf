@@ -178,6 +178,7 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
 
   const handleSelectModels = useCallback(
     (selectedIndexes: number[]) => {
+      console.log(selectedIndexes);
       const updatedSelection: Record<string, ScannedModel> = {};
 
       for (const index of selectedIndexes) {
@@ -190,7 +191,7 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
 
       setSelectedPrograms(updatedSelection);
     },
-    [selectedPrograms, rows]
+    [rows]
   );
 
   const handleClose = () =>

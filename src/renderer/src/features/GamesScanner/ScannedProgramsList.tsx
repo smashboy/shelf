@@ -29,7 +29,8 @@ const columns: GridColDef[] = [
 ];
 
 export default function ScannedProgramsList() {
-  const { isLoading, selectModels, rows, selectedRows, filteredRows, filter } = useScanner();
+  const { isLoading, selectModels, rows, selectedRows, filteredRows, filter, setFilter } =
+    useScanner();
 
   return (
     <Grid container spacing={1}>
@@ -48,6 +49,14 @@ export default function ScannedProgramsList() {
             components={{
               Toolbar,
               LoadingOverlay,
+            }}
+            componentsProps={{
+              toolbar: {
+                value: filter,
+                onChange: (event: React.ChangeEvent<HTMLInputElement>) =>
+                  setFilter(event.target.value),
+                clearSearch: () => setFilter(""),
+              },
             }}
             // autoPageSize
             checkboxSelection
