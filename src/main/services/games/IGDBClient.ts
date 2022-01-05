@@ -40,6 +40,7 @@ export default class IGDBClient {
           totalRatingCount: cachedInfo.data.totalRatingCount,
           storyline: cachedInfo.data.storyline,
           summary: cachedInfo.data.summary,
+          releaseDate: cachedInfo.data.releaseDate,
           websites: [],
           genres: [],
           screenshots: [],
@@ -65,10 +66,10 @@ export default class IGDBClient {
           "genres",
           "websites",
           "artworks",
-          // TODO
-          "tags",
-          "videos",
           "first_release_date",
+          // TODO
+          "keywords",
+          "videos",
           "involved_companies",
         ])
         .where(`id = ${gameId}`)
@@ -83,6 +84,7 @@ export default class IGDBClient {
         totalRatingCount: info.total_rating_count || 0,
         summary: info.summary || "",
         storyline: info.storyline || "",
+        releaseDate: info.first_release_date,
       };
 
       const cachedModel: GameInfoCachedModel = {

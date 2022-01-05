@@ -32,6 +32,7 @@ export interface GameInfoBaseModel {
   totalRatingCount: number;
   storyline: string;
   summary: string;
+  releaseDate: number;
 }
 
 export interface GameInfoCachedModel extends GameInfoBaseModel {

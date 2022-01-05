@@ -5,13 +5,14 @@ import Header from "./Header";
 import InfoSection from "./InfoSection";
 
 export default function GameDialog() {
-  const { game } = useGame();
+  const { game, close } = useGame();
 
   return (
     <Dialog
       TransitionComponent={Grow}
       scroll="paper"
       open={Boolean(game)}
+      onClose={close}
       sx={{
         "& .MuiDialog-paper": {
           position: "relative",
