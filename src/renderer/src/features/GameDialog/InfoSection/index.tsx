@@ -6,7 +6,7 @@ import { useCallback, useState } from "react";
 
 const useStyles = makeStyles({
   carouselRoot: {
-    width: "600px",
+    width: "800px",
   },
 });
 
@@ -32,6 +32,7 @@ export default function InfoSection() {
                 navButtonsProps={{
                   style: {
                     opacity: 1,
+                    marginTop: "-20px",
                   },
                 }}
               >
@@ -40,8 +41,8 @@ export default function InfoSection() {
                     onClick={() => handleShowImage(media.data)}
                     src={media.data}
                     alt={media.hash}
-                    width="480px"
-                    height="270px"
+                    width="80%"
+                    // height="270px"
                     style={{
                       display: "block",
                       margin: "0 auto",
