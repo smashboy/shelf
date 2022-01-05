@@ -42,7 +42,6 @@ export default function GamesFinderList() {
   const { rows, searchGames, isLoading, games, selected } = useScanner();
 
   const selectedPrograms = useMemo(
-    // TODO: fix types
     () =>
       Object.values(selected).map((row) => ({
         ...row,
