@@ -1,5 +1,6 @@
+import Button from "@/ui/components/Button";
 import PaperInput from "@/ui/components/PaperInput";
-import { Button, Grid } from "@mui/material";
+import { Grid } from "@mui/material";
 
 export default function GamesListHeader() {
   return (

@@ -6,6 +6,7 @@ import darkTheme from "./ui/themes/darkTheme";
 import "./storage/ElectronStore";
 import { ViewStoreProvider } from "./storage/ViewStore";
 import { SnackbarProvider } from "notistack";
+// import lightTheme from "./ui/themes/lightTheme";
 
 ReactDOM.render(
   <React.StrictMode>
