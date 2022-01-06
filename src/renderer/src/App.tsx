@@ -14,12 +14,12 @@ export default function App() {
       <GlobalStyles
         styles={{
           "::-webkit-scrollbar": {
-            width: 10,
-            height: 10,
+            width: 6,
+            height: 6,
           },
 
           "::-webkit-scrollbar-track": {
-            backgroundColor: theme.palette.text.secondary,
+            backgroundColor: "transparent",
           },
 
           "::-webkit-scrollbar-thumb": {
