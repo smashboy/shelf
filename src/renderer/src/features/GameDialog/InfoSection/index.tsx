@@ -1,8 +1,9 @@
-import { Backdrop, Box, Divider, Grid, Stack, styled, Typography } from "@mui/material";
+import { Backdrop, Container, Divider, Grid, Stack, styled, Typography } from "@mui/material";
 import Carousel from "react-material-ui-carousel";
 import { useGame } from "@/storage/GameStore";
 import { makeStyles } from "@mui/styles";
 import { useCallback, useState } from "react";
+import DescriptionItem from "./DescriptionItem";
 
 const useStyles = makeStyles({
   carouselRoot: {
@@ -13,7 +14,7 @@ const useStyles = makeStyles({
 export default function InfoSection() {
   const classes = useStyles();
 
-  const { loading, info, game } = useGame();
+  const { info } = useGame();
 
   const [image, setImage] = useState<string | null>(null);
 
@@ -54,47 +55,42 @@ export default function InfoSection() {
               </Carousel>
             </Grid>
             <Grid container item xs={12} justifyContent="center">
-              <Stack divider={<Divider flexItem />} spacing={1} sx={{ width: "75%" }}>
-                <Typography variant="subtitle1" component="div" color="text.primary">
-                  <b>Genres:</b>{" "}
-                  <Typography variant="subtitle2" component="span" color="text.secondary">
-                    {info.genres.map((genre) => genre.name).join(", ")}
-                  </Typography>
-                </Typography>
-                <Typography variant="subtitle1" component="div" color="text.primary">
-                  <b>Release date:</b>{" "}
-                  <Typography variant="subtitle2" component="span" color="text.secondary">
-                    {new Date(info.releaseDate * 1000).toLocaleDateString()}
-                  </Typography>
-                </Typography>
+              <Stack divider={<Divider flexItem />} spacing={1} sx={{ width: "65%" }}>
+                <DescriptionItem
+                  title="Genres"
+                  description={info.genres.map((genre) => genre.name).join(", ")}
+                />
+                <DescriptionItem
+                  title="Release date"
+                  description={new Date(info.releaseDate * 1000).toLocaleDateString()}
+                />
               </Stack>
             </Grid>
-
             <Grid item xs={12}>
-              {info.summary && (
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{
-                    display: "-webkit-box",
-                    WebkitLineClamp: 4,
-                    WebkitBoxOrient: "vertical",
-                    overflow: "hidden",
-                  }}
-                >
-                  {info?.summary}
-                </Typography>
-              )}
-              {info.storyline && (
-                <Typography
-                  variant="body2"
-                  component="div"
-                  color="text.secondary"
-                  sx={{ marginTop: 5 }}
-                >
-                  {info.storyline}
-                </Typography>
-              )}
+              <Container>
+                <Grid container spacing={2}>
+                  {info.summary && (
+                    <Grid item xs={12}>
+                      <Typography variant="h5" color="primary">
+                        Summary
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {info?.summary}
+                      </Typography>
+                    </Grid>
+                  )}
+                  {info.storyline && (
+                    <Grid item xs={12}>
+                      <Typography variant="h5" color="primary">
+                        Storyline
+                      </Typography>
+                      <Typography variant="body2" component="div" color="text.secondary">
+                        {info.storyline}
+                      </Typography>
+                    </Grid>
+                  )}
+                </Grid>
+              </Container>
             </Grid>
           </Grid>
         </Grid>

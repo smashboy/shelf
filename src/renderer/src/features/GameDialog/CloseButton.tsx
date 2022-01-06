@@ -6,7 +6,7 @@ export default function CloseButton() {
   const { close } = useGame();
 
   return (
-    <IconButton onClick={close} sx={{ position: "absolute", top: 10, right: 10, zIndex: 1 }}>
+    <IconButton onClick={close} sx={{ position: "absolute", top: 10, right: 10, zIndex: 11 }}>
       <CloseIcon />
     </IconButton>
   );

@@ -1,4 +1,4 @@
-import { Grid, Box, Typography } from "@mui/material";
+import { Grid, Box, DialogTitle } from "@mui/material";
 import {
   MdPlayArrow as PlayIcon,
   MdDelete as DeleteIcon,
@@ -9,7 +9,7 @@ import Button from "@/ui/components/Button";
 import GamePoster from "./GamePoster";
 
 export default function Header() {
-  const { headerImage } = useGame();
+  const { headerImage, game } = useGame();
 
   return (
     <Box
@@ -24,13 +24,22 @@ export default function Header() {
         position: "relative",
       }}
     >
+      <DialogTitle
+        sx={{
+          color: (theme) => theme.palette.text.primary,
+          position: "absolute",
+          zIndex: 1,
+        }}
+      >
+        {game?.name}
+      </DialogTitle>
       <Box
         sx={{
           backgroundColor: (theme) => theme.palette.background.paper,
           position: "absolute",
           top: 0,
           left: 0,
-          opacity: 0.45,
+          opacity: 0.15,
           width: "100%",
           height: "100%",
         }}
