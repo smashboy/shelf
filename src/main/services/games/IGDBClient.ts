@@ -11,6 +11,7 @@ import type {
   WebsiteModel,
   GameBaseCachedModel,
   CompanyModel,
+  ThemeModel,
 } from "src/models/GameModel";
 
 export type SearchGamesProps = Array<{
@@ -47,14 +48,25 @@ export default class IGDBClient {
           screenshots: [],
           artworks: [],
           companies: [],
+          themes: [],
         };
 
         // TODO: add game id
-        gameInfo.genres = await this.loadGenres(cachedInfo.data.genreIds);
-        gameInfo.websites = await this.loadWebsites(gameId, cachedInfo.data.websiteIds);
-        gameInfo.screenshots = await this.loadSreenshots(gameId, cachedInfo.data.screenshotIds);
-        gameInfo.artworks = await this.loadArtworks(gameId, cachedInfo.data.artworkIds);
-        gameInfo.companies = await this.loadCompanies(gameId, cachedInfo.data.companyIds);
+        const [genres, themes, websites, screenshots, artworks, companies] = await Promise.all([
+          this.loadGenres(cachedInfo.data.genreIds),
+          this.loadThemes(cachedInfo.data.themeIds),
+          this.loadWebsites(gameId, cachedInfo.data.websiteIds),
+          this.loadSreenshots(gameId, cachedInfo.data.screenshotIds),
+          this.loadArtworks(gameId, cachedInfo.data.artworkIds),
+          this.loadCompanies(gameId, cachedInfo.data.companyIds),
+        ]);
+
+        gameInfo.genres = genres;
+        gameInfo.themes = themes;
+        gameInfo.websites = websites;
+        gameInfo.screenshots = screenshots;
+        gameInfo.artworks = artworks;
+        gameInfo.companies = companies;
 
         return gameInfo;
       }
@@ -70,11 +82,10 @@ export default class IGDBClient {
           "websites",
           "artworks",
           "first_release_date",
-          // TODO
-          "keywords",
-          "themes",
-          "videos",
           "involved_companies",
+          "themes",
+          // TODO
+          "videos",
         ])
         .where(`id = ${gameId}`)
         .request("/games");
@@ -98,6 +109,7 @@ export default class IGDBClient {
         screenshotIds: info.screenshots || [],
         artworkIds: info.artworks || [],
         companyIds: info.involved_companies || [],
+        themeIds: info.themes || [],
       };
 
       const gameInfo: GameInfoModel = {
@@ -107,14 +119,25 @@ export default class IGDBClient {
         screenshots: [],
         artworks: [],
         companies: [],
+        themes: [],
       };
 
       // TODO: add game id
-      gameInfo.genres = await this.loadGenres(cachedModel.genreIds);
-      gameInfo.websites = await this.loadWebsites(gameId, cachedModel.websiteIds);
-      gameInfo.screenshots = await this.loadSreenshots(gameId, cachedModel.screenshotIds);
-      gameInfo.artworks = await this.loadArtworks(gameId, cachedModel.artworkIds);
-      gameInfo.companies = await this.loadCompanies(gameId, cachedModel.companyIds);
+      const [genres, themes, websites, screenshots, artworks, companies] = await Promise.all([
+        this.loadGenres(cachedModel.genreIds),
+        this.loadThemes(cachedModel.themeIds),
+        this.loadWebsites(gameId, cachedModel.websiteIds),
+        this.loadSreenshots(gameId, cachedModel.screenshotIds),
+        this.loadArtworks(gameId, cachedModel.artworkIds),
+        this.loadCompanies(gameId, cachedModel.companyIds),
+      ]);
+
+      gameInfo.genres = genres;
+      gameInfo.themes = themes;
+      gameInfo.websites = websites;
+      gameInfo.screenshots = screenshots;
+      gameInfo.artworks = artworks;
+      gameInfo.companies = companies;
 
       await this.cacheStore.save("info", gameSlug, cachedModel);
 
@@ -123,6 +146,44 @@ export default class IGDBClient {
       console.error(error);
       // return null;
     }
+  }
+
+  private async loadThemes(themesIds: number[]) {
+    const themes: GenreModel[] = [];
+
+    for (const id of themesIds) {
+      try {
+        const cachedTheme = await this.cacheStore.load<GenreModel>("themes", id.toString());
+
+        if (cachedTheme) {
+          themes.push(cachedTheme.data);
+          continue;
+        }
+
+        const response = await this.client
+          .fields(["name", "checksum"])
+          .where(`id = ${id}`)
+          .request("/themes");
+
+        const genre = response.data[0] || null;
+
+        if (!genre) continue;
+
+        const model: ThemeModel = {
+          name: genre.name,
+          hash: genre.checksum,
+        };
+
+        await this.cacheStore.save("themes", id.toString(), model);
+
+        themes.push(model);
+      } catch (error) {
+        console.error(error);
+        continue;
+      }
+    }
+
+    return themes;
   }
 
   private async loadArtworks(gameId: number, artworksIds: number[]) {

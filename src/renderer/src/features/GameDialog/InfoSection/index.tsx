@@ -102,6 +102,10 @@ export default function InfoSection(props: InfoSectionProps) {
                   description={info.genres.map((genre) => genre.name).join(", ")}
                 />
                 <DescriptionItem
+                  title="Themes"
+                  description={info.themes.map((theme) => theme.name).join(", ")}
+                />
+                <DescriptionItem
                   title="Release date"
                   description={new Date(info.releaseDate * 1000).toLocaleDateString()}
                 />

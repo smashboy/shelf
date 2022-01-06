@@ -21,6 +21,27 @@ export default function Header() {
         position: "relative",
       }}
     >
+      <Box
+        sx={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          backdropFilter: "blur(5px)",
+        }}
+      />
+      <Box
+        sx={{
+          backgroundColor: (theme) => theme.palette.background.paper,
+          position: "absolute",
+          top: 0,
+          left: 0,
+          opacity: 0.35,
+          width: "100%",
+          height: "100%",
+        }}
+      />
       <DialogTitle
         sx={{
           color: (theme) => theme.palette.text.primary,
@@ -30,17 +51,7 @@ export default function Header() {
       >
         {game?.name}
       </DialogTitle>
-      <Box
-        sx={{
-          backgroundColor: (theme) => theme.palette.background.paper,
-          position: "absolute",
-          top: 0,
-          left: 0,
-          opacity: 0.15,
-          width: "100%",
-          height: "100%",
-        }}
-      />
+
       <Grid
         container
         spacing={2}

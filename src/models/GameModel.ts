@@ -9,6 +9,11 @@ export interface WebsiteModel {
   url: string;
 }
 
+export interface ThemeModel {
+  hash: string;
+  name: string;
+}
+
 export interface CompanyModel {
   hash: string;
   name: string;
@@ -48,6 +53,7 @@ export interface GameInfoCachedModel extends GameInfoBaseModel {
   screenshotIds: number[];
   artworkIds: number[];
   companyIds: number[];
+  themeIds: number[];
 }
 
 export interface GameInfoModel extends GameInfoBaseModel {
@@ -56,10 +62,7 @@ export interface GameInfoModel extends GameInfoBaseModel {
   screenshots: MediaModel[];
   artworks: MediaModel[];
   companies: CompanyModel[];
-}
-
-export interface GameModel extends GameBaseModel, GameInfoModel {
-  relatedExecution?: string;
+  themes: ThemeModel[];
 }
 
 export interface UserGameModel {

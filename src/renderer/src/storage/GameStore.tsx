@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useState } from "react";
-import type { GameBaseModel, GameInfoModel, GameModel } from "src/models/GameModel";
+import type { GameBaseModel, GameInfoModel } from "src/models/GameModel";
 
 interface GameStore {
   game: GameBaseModel | null;
