@@ -1,17 +1,24 @@
-import { Backdrop, Container, Divider, Grid, Stack, styled, Typography } from "@mui/material";
+import { Backdrop, Container, Divider, Grid, Paper, Stack } from "@mui/material";
 import Carousel from "react-material-ui-carousel";
 import { useGame } from "@/storage/GameStore";
 import { makeStyles } from "@mui/styles";
 import { useCallback, useState } from "react";
 import DescriptionItem from "./DescriptionItem";
+import LargeDescriptionItem from "./LargeDescriptionItem";
 
 const useStyles = makeStyles({
   carouselRoot: {
-    width: "800px",
+    width: "90%",
   },
 });
 
-export default function InfoSection() {
+interface InfoSectionProps {
+  scrollTrigger: boolean;
+}
+
+export default function InfoSection(props: InfoSectionProps) {
+  const { scrollTrigger } = props;
+
   const classes = useStyles();
 
   const { info } = useGame();
@@ -25,8 +32,7 @@ export default function InfoSection() {
     <>
       {info && (
         <Grid container sx={{ paddingTop: 10 }}>
-          <Grid item xs={6}></Grid>
-          <Grid container item xs={6} spacing={2} justifyContent="center" flexWrap="wrap">
+          <Grid container item xs={9} spacing={2} justifyContent="center" flexWrap="wrap">
             <Grid container item xs={12} justifyContent="center">
               <Carousel
                 className={classes.carouselRoot}
@@ -54,8 +60,43 @@ export default function InfoSection() {
                 ))}
               </Carousel>
             </Grid>
+            <Grid item xs={12}>
+              <Container maxWidth="md">
+                <Grid container rowSpacing={2}>
+                  {info.summary && (
+                    <Grid item xs={12}>
+                      <LargeDescriptionItem title="Summary" description={info.summary} />
+                    </Grid>
+                  )}
+                  {info.storyline && (
+                    <Grid item xs={12}>
+                      <LargeDescriptionItem title="Storyline" description={info.storyline} />
+                    </Grid>
+                  )}
+                </Grid>
+              </Container>
+            </Grid>
+          </Grid>
+          <Grid
+            container
+            item
+            xs={3}
+            rowSpacing={2}
+            justifyContent="center"
+            flexWrap="wrap"
+            sx={{ position: "sticky", top: "70px", overflow: "auto", height: "fit-content" }}
+          >
             <Grid container item xs={12} justifyContent="center">
-              <Stack divider={<Divider flexItem />} spacing={1} sx={{ width: "65%" }}>
+              <Stack
+                divider={<Divider flexItem />}
+                spacing={1}
+                component={Paper}
+                sx={{
+                  padding: 2,
+                  height: "fit-content",
+                  width: "100%",
+                }}
+              >
                 <DescriptionItem
                   title="Genres"
                   description={info.genres.map((genre) => genre.name).join(", ")}
@@ -64,33 +105,21 @@ export default function InfoSection() {
                   title="Release date"
                   description={new Date(info.releaseDate * 1000).toLocaleDateString()}
                 />
+                <DescriptionItem
+                  title="Developers"
+                  description={info.companies
+                    .filter((company) => company.developer)
+                    .map((company) => company.name)
+                    .join(", ")}
+                />
+                <DescriptionItem
+                  title="Publishers"
+                  description={info.companies
+                    .filter((company) => company.publisher)
+                    .map((company) => company.name)
+                    .join(", ")}
+                />
               </Stack>
-            </Grid>
-            <Grid item xs={12}>
-              <Container>
-                <Grid container spacing={2}>
-                  {info.summary && (
-                    <Grid item xs={12}>
-                      <Typography variant="h5" color="primary">
-                        Summary
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {info?.summary}
-                      </Typography>
-                    </Grid>
-                  )}
-                  {info.storyline && (
-                    <Grid item xs={12}>
-                      <Typography variant="h5" color="primary">
-                        Storyline
-                      </Typography>
-                      <Typography variant="body2" component="div" color="text.secondary">
-                        {info.storyline}
-                      </Typography>
-                    </Grid>
-                  )}
-                </Grid>
-              </Container>
             </Grid>
           </Grid>
         </Grid>

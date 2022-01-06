@@ -16,15 +16,16 @@ import Dialog from "@/ui/components/Dialog";
 import CloseButton from "./CloseButton";
 import Header from "./Header";
 import InfoSection from "./InfoSection";
+import GameActions from "./GameActions";
 
 export default function GameDialog() {
   const { game, close } = useGame();
 
   const containerRef = useRef(null);
 
-  const firstHeaderTrigger = useScrollTrigger({
+  const scrollTrigger = useScrollTrigger({
     target: containerRef.current || undefined,
-    threshold: 200,
+    threshold: 235,
   });
 
   return (
@@ -42,7 +43,7 @@ export default function GameDialog() {
       fullScreen
     >
       <Box ref={containerRef} sx={{ overflowY: "auto" }}>
-        <Slide in={firstHeaderTrigger} direction="down">
+        <Slide in={scrollTrigger} direction="down">
           <DialogTitle
             sx={{
               color: (theme) => theme.palette.text.primary,
@@ -52,9 +53,16 @@ export default function GameDialog() {
               width: "100%",
               backgroundColor: (theme) => alpha(theme.palette.background.default, 0.25),
               backdropFilter: "blur(10px)",
+              display: "flex",
+              flexWrap: "nowrap",
             }}
+            // @ts-ignore
+            component="div"
           >
             {game?.name}
+            <Box sx={{ marginLeft: 3 }}>
+              <GameActions />
+            </Box>
           </DialogTitle>
         </Slide>
         <CloseButton />
@@ -64,7 +72,7 @@ export default function GameDialog() {
           </Grid>
           <Grid item xs={12}>
             <Container maxWidth="xl">
-              <InfoSection />
+              <InfoSection scrollTrigger={scrollTrigger} />
             </Container>
           </Grid>
         </Grid>

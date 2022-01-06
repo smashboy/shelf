@@ -10,6 +10,7 @@ import type {
   GenreModel,
   WebsiteModel,
   GameBaseCachedModel,
+  CompanyModel,
 } from "src/models/GameModel";
 
 export type SearchGamesProps = Array<{
@@ -45,13 +46,15 @@ export default class IGDBClient {
           genres: [],
           screenshots: [],
           artworks: [],
+          companies: [],
         };
 
         // TODO: add game id
         gameInfo.genres = await this.loadGenres(cachedInfo.data.genreIds);
-        gameInfo.websites = await this.loadWebsites(cachedInfo.data.websiteIds);
-        gameInfo.screenshots = await this.loadSreenshots(cachedInfo.data.screenshotIds);
-        gameInfo.artworks = await this.loadArtworks(cachedInfo.data.artworkIds);
+        gameInfo.websites = await this.loadWebsites(gameId, cachedInfo.data.websiteIds);
+        gameInfo.screenshots = await this.loadSreenshots(gameId, cachedInfo.data.screenshotIds);
+        gameInfo.artworks = await this.loadArtworks(gameId, cachedInfo.data.artworkIds);
+        gameInfo.companies = await this.loadCompanies(gameId, cachedInfo.data.companyIds);
 
         return gameInfo;
       }
@@ -69,6 +72,7 @@ export default class IGDBClient {
           "first_release_date",
           // TODO
           "keywords",
+          "themes",
           "videos",
           "involved_companies",
         ])
@@ -93,6 +97,7 @@ export default class IGDBClient {
         websiteIds: info.websites || [],
         screenshotIds: info.screenshots || [],
         artworkIds: info.artworks || [],
+        companyIds: info.involved_companies || [],
       };
 
       const gameInfo: GameInfoModel = {
@@ -101,13 +106,15 @@ export default class IGDBClient {
         genres: [],
         screenshots: [],
         artworks: [],
+        companies: [],
       };
 
       // TODO: add game id
       gameInfo.genres = await this.loadGenres(cachedModel.genreIds);
-      gameInfo.websites = await this.loadWebsites(cachedModel.websiteIds);
-      gameInfo.screenshots = await this.loadSreenshots(cachedModel.screenshotIds);
-      gameInfo.artworks = await this.loadArtworks(cachedModel.artworkIds);
+      gameInfo.websites = await this.loadWebsites(gameId, cachedModel.websiteIds);
+      gameInfo.screenshots = await this.loadSreenshots(gameId, cachedModel.screenshotIds);
+      gameInfo.artworks = await this.loadArtworks(gameId, cachedModel.artworkIds);
+      gameInfo.companies = await this.loadCompanies(gameId, cachedModel.companyIds);
 
       await this.cacheStore.save("info", gameSlug, cachedModel);
 
@@ -118,166 +125,250 @@ export default class IGDBClient {
     }
   }
 
-  private async loadArtworks(ids: number[]) {
+  private async loadArtworks(gameId: number, artworksIds: number[]) {
     const artworks: MediaModel[] = [];
 
-    for (const id of ids) {
+    for (const id of artworksIds) {
       try {
         const cachedArtwork = await this.cacheStore.load<MediaModel>("artworks", id.toString());
 
-        if (cachedArtwork) {
+        if (cachedArtwork)
           artworks.push({ ...cachedArtwork.data, data: cachedArtwork.media.artwork });
-          continue;
-        }
-
-        const response = await this.client
-          .fields(["checksum", "width", "height", "image_id"])
-          .where(`id = ${id}`)
-          .request("/artworks");
-
-        const data = response.data[0] || null;
-
-        if (!data) continue;
-
-        // t_thumb_widescreen_large
-        // t_original
-
-        const imageResponse = await fetch(
-          `https://images.igdb.com/igdb/image/upload/t_original/${data.image_id}.png`
-        );
-
-        const buffer = await imageResponse.arrayBuffer();
-
-        const base64 = Buffer.from(buffer).toString("base64");
-
-        const artwork: MediaModel = {
-          width: data.width,
-          height: data.height,
-          hash: data.checksum,
-          data: `data:image/png;base64,${base64}`,
-        };
-
-        await this.cacheStore.save(
-          "artworks",
-          id.toString(),
-          {
-            width: artwork.width,
-            height: artwork.height,
-            hash: artwork.hash,
-          },
-          {
-            artwork: artwork.data,
-          }
-        );
-
-        artworks.push(artwork);
       } catch (error) {
-        console.error(error);
         continue;
       }
+    }
+
+    if (artworks.length > 0) return artworks;
+
+    try {
+      const response = await this.client
+        .fields(["checksum", "width", "height", "image_id"])
+        .where(`game = ${gameId}`)
+        .request("/artworks");
+
+      const artworksData = ((response.data || null) as Array<any>) || null;
+
+      if (!artworksData || artworksData.length === 0) return artworks;
+
+      for (const data of artworksData) {
+        try {
+          const imageResponse = await fetch(
+            `https://images.igdb.com/igdb/image/upload/t_original/${data.image_id}.png`
+          );
+
+          const buffer = await imageResponse.arrayBuffer();
+
+          const base64 = Buffer.from(buffer).toString("base64");
+
+          const artwork: MediaModel = {
+            width: data.width,
+            height: data.height,
+            hash: data.checksum,
+            data: `data:image/png;base64,${base64}`,
+          };
+
+          await this.cacheStore.save(
+            "artworks",
+            data.id.toString(),
+            {
+              width: artwork.width,
+              height: artwork.height,
+              hash: artwork.hash,
+            },
+            {
+              artwork: artwork.data,
+            }
+          );
+
+          artworks.push(artwork);
+        } catch (error) {
+          continue;
+        }
+      }
+    } catch (error) {
+      console.error(error);
     }
 
     return artworks;
   }
 
-  private async loadSreenshots(ids: number[]) {
+  private async loadSreenshots(gameId: number, screenshotsIds: number[]) {
     const screenshots: MediaModel[] = [];
 
-    for (const id of ids) {
+    for (const id of screenshotsIds) {
       try {
         const cachedScreenshot = await this.cacheStore.load<MediaModel>(
           "screenshots",
           id.toString()
         );
 
-        if (cachedScreenshot) {
+        if (cachedScreenshot)
           screenshots.push({ ...cachedScreenshot.data, data: cachedScreenshot.media.screenshot });
-          continue;
-        }
-
-        const response = await this.client
-          .fields(["checksum", "width", "height", "image_id"])
-          .where(`id = ${id}`)
-          .request("/screenshots");
-
-        const data = response.data[0] || null;
-
-        if (!data) continue;
-
-        const imageResponse = await fetch(
-          `https://images.igdb.com/igdb/image/upload/t_original/${data.image_id}.png`
-        );
-
-        const buffer = await imageResponse.arrayBuffer();
-
-        const base64 = Buffer.from(buffer).toString("base64");
-
-        const screenshot: MediaModel = {
-          width: data.width,
-          height: data.height,
-          hash: data.checksum,
-          data: `data:image/png;base64,${base64}`,
-        };
-
-        await this.cacheStore.save(
-          "screenshots",
-          id.toString(),
-          {
-            width: screenshot.width,
-            height: screenshot.height,
-            hash: screenshot.hash,
-          },
-          {
-            screenshot: screenshot.data,
-          }
-        );
-
-        screenshots.push(screenshot);
       } catch (error) {
-        console.error(error);
         continue;
       }
+    }
+
+    if (screenshots.length > 0) return screenshots;
+
+    try {
+      const response = await this.client
+        .fields(["checksum", "width", "height", "image_id"])
+        .where(`game = ${gameId}`)
+        .request("/screenshots");
+
+      const screenshotsData = ((response.data || null) as Array<any>) || null;
+
+      if (!screenshotsData || screenshotsData.length === 0) return screenshots;
+
+      for (const data of screenshotsData) {
+        try {
+          const imageResponse = await fetch(
+            `https://images.igdb.com/igdb/image/upload/t_original/${data.image_id}.png`
+          );
+
+          const buffer = await imageResponse.arrayBuffer();
+
+          const base64 = Buffer.from(buffer).toString("base64");
+
+          const screenshot: MediaModel = {
+            width: data.width,
+            height: data.height,
+            hash: data.checksum,
+            data: `data:image/png;base64,${base64}`,
+          };
+
+          await this.cacheStore.save(
+            "screenshots",
+            data.id.toString(),
+            {
+              width: screenshot.width,
+              height: screenshot.height,
+              hash: screenshot.hash,
+            },
+            {
+              screenshot: screenshot.data,
+            }
+          );
+
+          screenshots.push(screenshot);
+        } catch (error) {
+          continue;
+        }
+      }
+    } catch (error) {
+      console.error(error);
     }
 
     return screenshots;
   }
 
-  private async loadWebsites(ids: number[]) {
+  private async loadWebsites(gameId: number, websitesIds: number[]) {
     const websites: WebsiteModel[] = [];
 
-    for (const id of ids) {
+    for (const id of websitesIds) {
       try {
         const cachedWebsite = await this.cacheStore.load<WebsiteModel>("websites", id.toString());
 
-        if (cachedWebsite) {
-          websites.push(cachedWebsite.data);
-          continue;
-        }
-        const response = await this.client
-          .fields(["url", "checksum", "trusted"])
-          .where(`id = ${id}`)
-          .request("/websites");
-
-        const website = response.data[0] || null;
-
-        if (!website) continue;
-
-        const model: WebsiteModel = {
-          trusted: website.trusted,
-          url: website.url,
-          hash: website.checksum,
-        };
-
-        await this.cacheStore.save("websites", id.toString(), model);
-
-        websites.push(model);
+        if (cachedWebsite) websites.push(cachedWebsite.data);
       } catch (error) {
-        console.error(error);
         continue;
       }
     }
 
+    if (websites.length > 0) return websites;
+
+    try {
+      const response = await this.client
+        .fields(["url", "checksum", "trusted"])
+        .where(`game = ${gameId}`)
+        .request("/websites");
+
+      const websitesData = ((response.data || null) as Array<any>) || null;
+
+      if (!websitesData || websitesData.length === 0) return websites;
+
+      for (const data of websitesData) {
+        try {
+          const model: WebsiteModel = {
+            trusted: data.trusted,
+            url: data.url,
+            hash: data.checksum,
+          };
+
+          await this.cacheStore.save("websites", data.id.toString(), model);
+
+          websites.push(model);
+        } catch (error) {
+          continue;
+        }
+      }
+    } catch (error) {
+      console.error(error);
+    }
+
     return websites;
+  }
+
+  private async loadCompanies(gameId: number, companiesIds: number[]) {
+    const companies: CompanyModel[] = [];
+
+    for (const id of companiesIds) {
+      try {
+        const cachedCompany = await this.cacheStore.load<CompanyModel>("companies", id.toString());
+
+        if (cachedCompany) companies.push(cachedCompany.data);
+      } catch (error) {
+        continue;
+      }
+    }
+
+    if (companies.length > 0) return companies;
+
+    try {
+      const involvedCompaniesResponse = await this.client
+        .fields(["company", "developer", "publisher"])
+        .where(`game = ${gameId}`)
+        .request("/involved_companies");
+
+      const involvedCompaniesData =
+        ((involvedCompaniesResponse.data || null) as Array<any>) || null;
+
+      if (!involvedCompaniesData || involvedCompaniesData.length === 0) return companies;
+
+      for (const involvedCompany of involvedCompaniesData) {
+        try {
+          if (involvedCompany.developer || involvedCompany.publisher) {
+            const companiesResponse = await this.client
+              .fields(["name", "checksum"])
+              .where(`id = ${involvedCompany.company}`)
+              .request("/companies");
+
+            const company = companiesResponse.data[0] || null;
+
+            if (!company) continue;
+
+            const model: CompanyModel = {
+              name: company.name,
+              hash: company.checksum,
+              developer: involvedCompany.developer,
+              publisher: involvedCompany.publisher,
+            };
+
+            await this.cacheStore.save("companies", involvedCompany.id.toString(), model);
+
+            companies.push(model);
+          }
+        } catch (error) {
+          continue;
+        }
+      }
+    } catch (error) {
+      console.error(error);
+    }
+
+    return companies;
   }
 
   private async loadGenres(ids: number[]) {

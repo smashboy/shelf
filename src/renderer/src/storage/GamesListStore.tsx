@@ -27,8 +27,6 @@ export const GamesListStoreProvider = ({ children }: { children: React.ReactNode
 
       const games = await invoke("games-list");
 
-      console.log(games);
-
       setGames(games);
 
       setLoading(false);

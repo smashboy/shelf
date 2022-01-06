@@ -9,6 +9,13 @@ export interface WebsiteModel {
   url: string;
 }
 
+export interface CompanyModel {
+  hash: string;
+  name: string;
+  developer: boolean;
+  publisher: boolean;
+}
+
 export interface MediaModel {
   hash: string;
   width: number;
@@ -40,6 +47,7 @@ export interface GameInfoCachedModel extends GameInfoBaseModel {
   genreIds: number[];
   screenshotIds: number[];
   artworkIds: number[];
+  companyIds: number[];
 }
 
 export interface GameInfoModel extends GameInfoBaseModel {
@@ -47,6 +55,7 @@ export interface GameInfoModel extends GameInfoBaseModel {
   genres: GenreModel[];
   screenshots: MediaModel[];
   artworks: MediaModel[];
+  companies: CompanyModel[];
 }
 
 export interface GameModel extends GameBaseModel, GameInfoModel {

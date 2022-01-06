@@ -1,6 +1,6 @@
 import { Typography } from "@mui/material";
 
-interface DescriptionItemProps {
+export interface DescriptionItemProps {
   title: string;
   description: string;
 }
@@ -16,7 +16,7 @@ export default function DescriptionItem(props: DescriptionItemProps) {
       sx={{ display: "flex", justifyContent: "space-between" }}
     >
       <b>{title}</b>
-      <Typography variant="subtitle1" component="span" color="text.primary">
+      <Typography variant="subtitle2" component="span" color="text.primary" sx={{ paddingLeft: 2 }}>
         {description}
       </Typography>
     </Typography>

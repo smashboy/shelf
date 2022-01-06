@@ -1,12 +1,9 @@
 import { Grid, Box, DialogTitle } from "@mui/material";
-import {
-  MdPlayArrow as PlayIcon,
-  MdDelete as DeleteIcon,
-  MdBookmarkAdd as BookmarkAddIcon,
-} from "react-icons/md";
+
 import { useGame } from "@/storage/GameStore";
 import Button from "@/ui/components/Button";
 import GamePoster from "./GamePoster";
+import GameActions from "./GameActions";
 
 export default function Header() {
   const { headerImage, game } = useGame();
@@ -52,23 +49,8 @@ export default function Header() {
         <Grid container item xs={2} justifyContent="center">
           <GamePoster />
         </Grid>
-        <Grid container spacing={1} item xs={8} sx={{ marginBottom: 7, marginTop: 3 }}>
-          <Grid container item xs="auto" alignItems="center">
-            <Button variant="contained" startIcon={<PlayIcon />}>
-              Play
-            </Button>
-          </Grid>
-
-          <Grid container item xs="auto" alignItems="center">
-            <Button variant="contained" color="error" startIcon={<DeleteIcon />}>
-              Delete
-            </Button>
-          </Grid>
-          <Grid container item xs="auto" alignItems="center">
-            <Button variant="outlined" color="secondary" sx={{ height: "36px" }}>
-              <BookmarkAddIcon size={20} />
-            </Button>
-          </Grid>
+        <Grid item xs={8} sx={{ marginBottom: 7, marginTop: 3 }}>
+          <GameActions />
         </Grid>
       </Grid>
     </Box>
