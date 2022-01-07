@@ -539,7 +539,7 @@ export default class IGDBClient {
       if (!coverData) return null;
 
       const imageResponse = await fetch(
-        `https://images.igdb.com/igdb/image/upload/t_cover_big_2x/${coverData.image_id}.png`
+        `https://images.igdb.com/igdb/image/upload/t_original/${coverData.image_id}.png`
       );
 
       const buffer = await imageResponse.arrayBuffer();
