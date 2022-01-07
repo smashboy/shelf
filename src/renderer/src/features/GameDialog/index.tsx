@@ -50,7 +50,7 @@ export default function GameDialog() {
             // @ts-ignore
             component="div"
           >
-            <Box sx={{ pointerEvents: "none" }}>{game?.name}</Box>
+            {game?.name}
             <Box sx={{ marginLeft: 3 }}>
               <GameActions />
             </Box>
