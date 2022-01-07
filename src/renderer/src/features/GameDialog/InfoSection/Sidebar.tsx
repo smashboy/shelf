@@ -26,6 +26,10 @@ export default function Sidebar() {
           description={info!.themes.map((theme) => theme.name).join(", ")}
         />
         <DescriptionItem
+          title="Game modes"
+          description={info!.modes.map((mode) => mode.name).join(", ")}
+        />
+        <DescriptionItem
           title="Release date"
           description={new Date(info!.releaseDate * 1000).toLocaleDateString()}
         />

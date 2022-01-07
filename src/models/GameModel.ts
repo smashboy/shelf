@@ -36,6 +36,11 @@ export interface GameBaseCachedModel {
   hash: string;
 }
 
+export interface GameModeModel {
+  hash: string;
+  name: string;
+}
+
 export interface GameBaseModel extends GameBaseCachedModel {
   cover: MediaModel | null;
 }
@@ -57,6 +62,7 @@ export interface GameInfoCachedModel extends GameInfoBaseModel {
   artworkIds: number[];
   companyIds: number[];
   themeIds: number[];
+  modeIds: number[];
 }
 
 export interface GameInfoModel extends GameInfoBaseModel {
@@ -66,6 +72,7 @@ export interface GameInfoModel extends GameInfoBaseModel {
   artworks: MediaModel[];
   companies: CompanyModel[];
   themes: ThemeModel[];
+  modes: GameModeModel[];
 }
 
 export interface UserGameModel {

@@ -12,6 +12,7 @@ import type {
   GameBaseCachedModel,
   CompanyModel,
   ThemeModel,
+  GameModeModel,
 } from "src/models/GameModel";
 
 export type SearchGamesProps = Array<{
@@ -51,17 +52,20 @@ export default class IGDBClient {
           artworks: [],
           companies: [],
           themes: [],
+          modes: [],
         };
 
         // TODO: add game id
-        const [genres, themes, websites, screenshots, artworks, companies] = await Promise.all([
-          this.loadGenres(cachedInfo.data.genreIds),
-          this.loadThemes(cachedInfo.data.themeIds),
-          this.loadWebsites(gameId, cachedInfo.data.websiteIds),
-          this.loadSreenshots(gameId, cachedInfo.data.screenshotIds),
-          this.loadArtworks(gameId, cachedInfo.data.artworkIds),
-          this.loadCompanies(gameId, cachedInfo.data.companyIds),
-        ]);
+        const [genres, themes, websites, screenshots, artworks, companies, modes] =
+          await Promise.all([
+            this.loadGenres(cachedInfo.data.genreIds),
+            this.loadThemes(cachedInfo.data.themeIds),
+            this.loadWebsites(gameId, cachedInfo.data.websiteIds),
+            this.loadSreenshots(gameId, cachedInfo.data.screenshotIds),
+            this.loadArtworks(gameId, cachedInfo.data.artworkIds),
+            this.loadCompanies(gameId, cachedInfo.data.companyIds),
+            this.loadGameModes(cachedInfo.data.modeIds),
+          ]);
 
         gameInfo.genres = genres;
         gameInfo.themes = themes;
@@ -69,6 +73,7 @@ export default class IGDBClient {
         gameInfo.screenshots = screenshots;
         gameInfo.artworks = artworks;
         gameInfo.companies = companies;
+        gameInfo.modes = modes;
 
         return gameInfo;
       }
@@ -89,6 +94,7 @@ export default class IGDBClient {
           "involved_companies",
           "themes",
           // TODO
+          "game_modes",
           "videos",
         ])
         .where(`id = ${gameId}`)
@@ -116,6 +122,7 @@ export default class IGDBClient {
         artworkIds: info.artworks || [],
         companyIds: info.involved_companies || [],
         themeIds: info.themes || [],
+        modeIds: info.game_modes || [],
       };
 
       const gameInfo: GameInfoModel = {
@@ -126,17 +133,21 @@ export default class IGDBClient {
         artworks: [],
         companies: [],
         themes: [],
+        modes: [],
       };
 
       // TODO: add game id
-      const [genres, themes, websites, screenshots, artworks, companies] = await Promise.all([
-        this.loadGenres(cachedModel.genreIds),
-        this.loadThemes(cachedModel.themeIds),
-        this.loadWebsites(gameId, cachedModel.websiteIds),
-        this.loadSreenshots(gameId, cachedModel.screenshotIds),
-        this.loadArtworks(gameId, cachedModel.artworkIds),
-        this.loadCompanies(gameId, cachedModel.companyIds),
-      ]);
+      const [genres, themes, websites, screenshots, artworks, companies, modes] = await Promise.all(
+        [
+          this.loadGenres(cachedModel.genreIds),
+          this.loadThemes(cachedModel.themeIds),
+          this.loadWebsites(gameId, cachedModel.websiteIds),
+          this.loadSreenshots(gameId, cachedModel.screenshotIds),
+          this.loadArtworks(gameId, cachedModel.artworkIds),
+          this.loadCompanies(gameId, cachedModel.companyIds),
+          this.loadGameModes(cachedModel.modeIds),
+        ]
+      );
 
       gameInfo.genres = genres;
       gameInfo.themes = themes;
@@ -144,6 +155,7 @@ export default class IGDBClient {
       gameInfo.screenshots = screenshots;
       gameInfo.artworks = artworks;
       gameInfo.companies = companies;
+      gameInfo.modes = modes;
 
       await this.cacheStore.save("info", gameSlug, cachedModel);
 
@@ -159,7 +171,7 @@ export default class IGDBClient {
 
     for (const id of themesIds) {
       try {
-        const cachedTheme = await this.cacheStore.load<GenreModel>("themes", id.toString());
+        const cachedTheme = await this.cacheStore.load<GenreModel>("themes", id);
 
         if (cachedTheme) {
           themes.push(cachedTheme.data);
@@ -180,7 +192,7 @@ export default class IGDBClient {
           hash: genre.checksum,
         };
 
-        await this.cacheStore.save("themes", id.toString(), model);
+        await this.cacheStore.save("themes", id, model);
 
         themes.push(model);
       } catch (error) {
@@ -192,12 +204,49 @@ export default class IGDBClient {
     return themes;
   }
 
+  private async loadGameModes(modesIds: number[]) {
+    const modes: GameModeModel[] = [];
+
+    for (const id of modesIds) {
+      try {
+        const cachedMode = await this.cacheStore.load<GameModeModel>("game-modes", id);
+
+        if (cachedMode) {
+          modes.push(cachedMode.data);
+          continue;
+        }
+
+        const response = await this.client
+          .fields(["checksum", "name"])
+          .where(`id = ${id}`)
+          .request("/game_modes");
+
+        const data = response.data[0] || null;
+
+        if (!data) continue;
+
+        const model: GameModeModel = {
+          hash: data.checksum,
+          name: data.name,
+        };
+
+        await this.cacheStore.save("game-modes", id, model);
+
+        modes.push(model);
+      } catch (error) {
+        continue;
+      }
+    }
+
+    return modes;
+  }
+
   private async loadArtworks(gameId: number, artworksIds: number[]) {
     const artworks: MediaModel[] = [];
 
     for (const id of artworksIds) {
       try {
-        const cachedArtwork = await this.cacheStore.load<MediaModel>("artworks", id.toString());
+        const cachedArtwork = await this.cacheStore.load<MediaModel>("artworks", id);
 
         if (cachedArtwork)
           artworks.push({ ...cachedArtwork.data, data: cachedArtwork.media.artwork });
@@ -237,7 +286,7 @@ export default class IGDBClient {
 
           await this.cacheStore.save(
             "artworks",
-            data.id.toString(),
+            data.id,
             {
               width: artwork.width,
               height: artwork.height,
@@ -265,10 +314,7 @@ export default class IGDBClient {
 
     for (const id of screenshotsIds) {
       try {
-        const cachedScreenshot = await this.cacheStore.load<MediaModel>(
-          "screenshots",
-          id.toString()
-        );
+        const cachedScreenshot = await this.cacheStore.load<MediaModel>("screenshots", id);
 
         if (cachedScreenshot)
           screenshots.push({ ...cachedScreenshot.data, data: cachedScreenshot.media.screenshot });
@@ -308,7 +354,7 @@ export default class IGDBClient {
 
           await this.cacheStore.save(
             "screenshots",
-            data.id.toString(),
+            data.id,
             {
               width: screenshot.width,
               height: screenshot.height,
@@ -336,7 +382,7 @@ export default class IGDBClient {
 
     for (const id of websitesIds) {
       try {
-        const cachedWebsite = await this.cacheStore.load<WebsiteModel>("websites", id.toString());
+        const cachedWebsite = await this.cacheStore.load<WebsiteModel>("websites", id);
 
         if (cachedWebsite) websites.push(cachedWebsite.data);
       } catch (error) {
@@ -365,7 +411,7 @@ export default class IGDBClient {
             category: data.category,
           };
 
-          await this.cacheStore.save("websites", data.id.toString(), model);
+          await this.cacheStore.save("websites", data.id, model);
 
           websites.push(model);
         } catch (error) {
@@ -384,7 +430,7 @@ export default class IGDBClient {
 
     for (const id of companiesIds) {
       try {
-        const cachedCompany = await this.cacheStore.load<CompanyModel>("companies", id.toString());
+        const cachedCompany = await this.cacheStore.load<CompanyModel>("companies", id);
 
         if (cachedCompany) companies.push(cachedCompany.data);
       } catch (error) {
@@ -424,7 +470,7 @@ export default class IGDBClient {
               publisher: involvedCompany.publisher,
             };
 
-            await this.cacheStore.save("companies", involvedCompany.id.toString(), model);
+            await this.cacheStore.save("companies", involvedCompany.id, model);
 
             companies.push(model);
           }
@@ -444,7 +490,7 @@ export default class IGDBClient {
 
     for (const id of ids) {
       try {
-        const cachedGenre = await this.cacheStore.load<GenreModel>("genres", id.toString());
+        const cachedGenre = await this.cacheStore.load<GenreModel>("genres", id);
 
         if (cachedGenre) {
           genres.push(cachedGenre.data);
@@ -465,7 +511,7 @@ export default class IGDBClient {
           hash: genre.checksum,
         };
 
-        await this.cacheStore.save("genres", id.toString(), model);
+        await this.cacheStore.save("genres", id, model);
 
         genres.push(model);
       } catch (error) {
@@ -479,7 +525,7 @@ export default class IGDBClient {
 
   private async loadCover(gameId: number): Promise<MediaModel | null> {
     try {
-      const cachedCover = await this.cacheStore.load<MediaModel>("covers", gameId.toString());
+      const cachedCover = await this.cacheStore.load<MediaModel>("covers", gameId);
 
       if (cachedCover) return { ...cachedCover.data, data: cachedCover.media.cover };
 
@@ -509,7 +555,7 @@ export default class IGDBClient {
 
       await this.cacheStore.save(
         "covers",
-        gameId.toString(),
+        gameId,
         {
           width: cover.width,
           height: cover.height,

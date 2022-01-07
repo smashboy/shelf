@@ -1,6 +1,5 @@
-import { Container, Grid } from "@mui/material";
+import { Grid } from "@mui/material";
 import { useGame } from "@/storage/GameStore";
-import LargeDescriptionItem from "./LargeDescriptionItem";
 import Sidebar from "./Sidebar";
 import Carousel from "./Carousel";
 import Description from "./Description";

@@ -19,7 +19,7 @@ export default class CacheStore extends BaseStore {
 
   async save(
     bucket: string,
-    key: string,
+    key: string | number,
     data: Record<string, any>,
     media?: Record<string, string>
   ) {
@@ -54,7 +54,7 @@ export default class CacheStore extends BaseStore {
     }
   }
 
-  async update<T = any>(bucket: string, key: string, callback: (data: T) => T) {
+  async update<T = any>(bucket: string, key: string | number, callback: (data: T) => T) {
     let cache: CacheModel | null = null;
 
     const memoryCache = this.memoryCache[bucket]?.[key] || null;
@@ -81,7 +81,7 @@ export default class CacheStore extends BaseStore {
 
   async load<T = any>(
     bucket: string,
-    key: string,
+    key: string | number,
     options?: { withoutMedia?: boolean }
   ): Promise<CacheWithMediaModel<T> | null> {
     let cache: CacheModel | null = null;
@@ -157,7 +157,7 @@ export default class CacheStore extends BaseStore {
     return media;
   }
 
-  private _setMemoryCache(bucket: string, key: string, data: CacheModel) {
+  private _setMemoryCache(bucket: string, key: string | number, data: CacheModel) {
     this.memoryCache[bucket] = this.memoryCache[bucket] || {};
     this.memoryCache[bucket][key] = data;
   }
