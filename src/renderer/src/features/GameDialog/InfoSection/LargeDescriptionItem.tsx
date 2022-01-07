@@ -6,7 +6,7 @@ export default function LargeDescriptionItem(props: DescriptionItemProps) {
 
   return (
     <>
-      <Typography variant="h5" color="primary">
+      <Typography variant="h5" color="secondary">
         {title}
       </Typography>
       <Paper sx={{ padding: 2 }} elevation={0}>

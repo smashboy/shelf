@@ -1,15 +1,5 @@
 import { useRef } from "react";
-import {
-  Container,
-  DialogTitle,
-  Grid,
-  Grow,
-  useScrollTrigger,
-  SxProps,
-  Theme,
-  Box,
-  Slide,
-} from "@mui/material";
+import { Container, DialogTitle, Grid, Grow, useScrollTrigger, Box, Slide } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { useGame } from "@/storage/GameStore";
 import Dialog from "@/ui/components/Dialog";
@@ -42,7 +32,7 @@ export default function GameDialog() {
       }}
       fullScreen
     >
-      <Box ref={containerRef} sx={{ overflowY: "auto" }}>
+      <Box ref={containerRef} sx={{ overflowY: "auto", paddingBottom: 10 }}>
         <Slide in={scrollTrigger} direction="down">
           <DialogTitle
             sx={{
@@ -72,7 +62,7 @@ export default function GameDialog() {
           </Grid>
           <Grid item xs={12}>
             <Container maxWidth="xl">
-              <InfoSection scrollTrigger={scrollTrigger} />
+              <InfoSection />
             </Container>
           </Grid>
         </Grid>

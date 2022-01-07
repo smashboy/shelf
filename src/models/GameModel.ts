@@ -6,6 +6,7 @@ export interface GenreModel {
 export interface WebsiteModel {
   hash: string;
   trusted: boolean;
+  category: number;
   url: string;
 }
 
@@ -42,6 +43,8 @@ export interface GameBaseModel extends GameBaseCachedModel {
 export interface GameInfoBaseModel {
   totalRating: number;
   totalRatingCount: number;
+  igdbTotalRating: number;
+  igdbTotalRatingCount: number;
   storyline: string;
   summary: string;
   releaseDate: number;

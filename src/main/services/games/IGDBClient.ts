@@ -40,6 +40,8 @@ export default class IGDBClient {
         const gameInfo: GameInfoModel = {
           totalRating: cachedInfo.data.totalRating,
           totalRatingCount: cachedInfo.data.totalRatingCount,
+          igdbTotalRating: cachedInfo.data.igdbTotalRating,
+          igdbTotalRatingCount: cachedInfo.data.igdbTotalRatingCount,
           storyline: cachedInfo.data.storyline,
           summary: cachedInfo.data.summary,
           releaseDate: cachedInfo.data.releaseDate,
@@ -75,6 +77,8 @@ export default class IGDBClient {
         .fields([
           "total_rating",
           "total_rating_count",
+          "rating",
+          "rating_count",
           "screenshots",
           "storyline",
           "summary",
@@ -97,6 +101,8 @@ export default class IGDBClient {
       const base: GameInfoBaseModel = {
         totalRating: info.total_rating || 0,
         totalRatingCount: info.total_rating_count || 0,
+        igdbTotalRating: info.rating || 0,
+        igdbTotalRatingCount: info.rating_count || 0,
         summary: info.summary || "",
         storyline: info.storyline || "",
         releaseDate: info.first_release_date,
@@ -342,7 +348,7 @@ export default class IGDBClient {
 
     try {
       const response = await this.client
-        .fields(["url", "checksum", "trusted"])
+        .fields(["url", "checksum", "trusted", "category"])
         .where(`game = ${gameId}`)
         .request("/websites");
 
@@ -356,6 +362,7 @@ export default class IGDBClient {
             trusted: data.trusted,
             url: data.url,
             hash: data.checksum,
+            category: data.category,
           };
 
           await this.cacheStore.save("websites", data.id.toString(), model);
