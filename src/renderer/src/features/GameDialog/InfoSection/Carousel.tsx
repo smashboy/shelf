@@ -33,6 +33,7 @@ export default function Carousel() {
       >
         {[...info!.screenshots, ...info!.artworks].map((media) => (
           <img
+            key={media.hash}
             onClick={() => handleShowImage(media.data)}
             src={media.data}
             alt={media.hash}
