@@ -39,7 +39,7 @@ export default function GameDialog() {
             sx={{
               color: (theme) => theme.palette.text.primary,
               zIndex: 10,
-              pointerEvents: "none",
+
               position: "absolute",
               width: "100%",
               backgroundColor: (theme) => alpha(theme.palette.background.default, 0.25),
@@ -50,7 +50,7 @@ export default function GameDialog() {
             // @ts-ignore
             component="div"
           >
-            {game?.name}
+            <Box sx={{ pointerEvents: "none" }}>{game?.name}</Box>
             <Box sx={{ marginLeft: 3 }}>
               <GameActions />
             </Box>
