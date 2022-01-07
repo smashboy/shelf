@@ -15,6 +15,7 @@ export default function GameDialog() {
 
   const scrollTrigger = useScrollTrigger({
     target: containerRef.current || undefined,
+    disableHysteresis: true,
     threshold: 235,
   });
 
