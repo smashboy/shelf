@@ -1,12 +1,12 @@
 import { useGame } from "@/storage/GameStore";
-import { Container, Grid, Typography } from "@mui/material";
+import { Grid, Typography } from "@mui/material";
 import RatingItem from "./RatingItem";
 
 export default function Rating() {
   const { info } = useGame();
 
   return (
-    <Container maxWidth="md">
+    <>
       <Typography variant="h5" color="secondary">
         Ratings
       </Typography>
@@ -23,6 +23,6 @@ export default function Rating() {
           totalRatingCount={info!.igdbTotalRatingCount}
         />
       </Grid>
-    </Container>
+    </>
   );
 }

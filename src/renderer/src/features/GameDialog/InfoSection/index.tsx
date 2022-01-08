@@ -1,4 +1,4 @@
-import { Grid } from "@mui/material";
+import { Container, Grid } from "@mui/material";
 import { useGame } from "@/storage/GameStore";
 import Sidebar from "./Sidebar";
 import Carousel from "./Carousel";
@@ -13,19 +13,23 @@ export default function InfoSection() {
     <>
       {info && (
         <Grid container sx={{ paddingTop: 10 }}>
-          <Grid container item xs={9} spacing={2} justifyContent="center" flexWrap="wrap">
+          <Grid container item xs={9} rowSpacing={2} justifyContent="center">
             <Grid container item xs={12} justifyContent="center">
               <Carousel />
             </Grid>
-            <Grid item xs={12}>
-              <Description />
-            </Grid>
-            <Grid item xs={12}>
-              <Websites />
-            </Grid>
-            <Grid item xs={12}>
-              <Rating />
-            </Grid>
+            <Container maxWidth="md" sx={{ marginTop: 2 }}>
+              <Grid container rowSpacing={2}>
+                <Grid item xs={12}>
+                  <Description />
+                </Grid>
+                <Grid item xs={12}>
+                  <Websites />
+                </Grid>
+                <Grid item xs={12}>
+                  <Rating />
+                </Grid>
+              </Grid>
+            </Container>
           </Grid>
           <Grid
             container

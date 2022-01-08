@@ -1,12 +1,12 @@
 import { useGame } from "@/storage/GameStore";
-import { Container, Grid, Paper, Typography } from "@mui/material";
+import { Grid, Paper, Typography } from "@mui/material";
 import WebsiteItem, { websiteIcons } from "./WebsiteItem";
 
 export default function Websites() {
   const { info } = useGame();
 
   return (
-    <Container maxWidth="md">
+    <>
       <Typography variant="h5" color="secondary">
         Socials
       </Typography>
@@ -20,6 +20,6 @@ export default function Websites() {
             ))}
         </Grid>
       </Paper>
-    </Container>
+    </>
   );
 }
