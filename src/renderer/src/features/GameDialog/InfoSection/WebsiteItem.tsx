@@ -16,7 +16,6 @@ import {
 } from "react-icons/fa";
 import type { WebsiteModel } from "src/models/GameModel";
 import { Grid } from "@mui/material";
-import Button from "@/ui/components/Button";
 import IconButton from "@/ui/components/IconButton";
 
 export const websiteIcons = {

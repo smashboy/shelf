@@ -5,13 +5,14 @@ import Carousel from "./Carousel";
 import Description from "./Description";
 import Rating from "./Rating";
 import Websites from "./Websites";
+import LoadingPlaceholder from "./LoadingPlaceholder";
 
 export default function InfoSection() {
   const { info } = useGame();
 
   return (
     <>
-      {info && (
+      {info ? (
         <Grid container sx={{ paddingTop: 10 }}>
           <Grid container item xs={9} rowSpacing={2} justifyContent="center">
             <Grid container item xs={12} justifyContent="center">
@@ -43,6 +44,8 @@ export default function InfoSection() {
             <Sidebar />
           </Grid>
         </Grid>
+      ) : (
+        <LoadingPlaceholder />
       )}
     </>
   );

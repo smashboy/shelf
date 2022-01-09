@@ -79,3 +79,5 @@ export interface UserGameModel {
   gameSlug: string;
   relatedExecution?: string;
 }
+
+export interface UserGameModelFull extends UserGameModel, GameBaseModel {}

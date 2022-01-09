@@ -60,7 +60,7 @@ export default function Header() {
         <Grid container item xs={2} justifyContent="center">
           <GamePoster />
         </Grid>
-        <Grid item xs={8} sx={{ marginBottom: 7, marginTop: 3 }}>
+        <Grid container item xs={8} alignItems="flex-end" sx={{ marginBottom: 7 }}>
           <GameActions />
         </Grid>
       </Grid>

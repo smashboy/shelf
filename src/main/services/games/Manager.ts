@@ -1,11 +1,14 @@
 import crypto from "crypto";
-import { ipcMain } from "electron";
-import { CacheWithMediaModel } from "src/models/CacheModel";
+import path from "path";
+import fs from "fs";
+// import psNode from "ps-node";
+import child_process from "child_process";
+import { BrowserWindow, ipcMain } from "electron";
 import type {
   GameBaseCachedModel,
-  GameBaseModel,
   MediaModel,
   UserGameModel,
+  UserGameModelFull,
 } from "src/models/GameModel";
 import CacheStore from "../store/CacheStore";
 import IGDBClient from "./IGDBClient";
@@ -16,16 +19,18 @@ export type GetGameInfo = { gameSlug: string; gameId: number };
 interface GamesManagerProps {
   cacheStore: CacheStore;
   igdb: IGDBClient;
+  appWindow: BrowserWindow;
 }
 
 export default class GamesManager {
   private readonly cacheStore: CacheStore;
-
   private readonly igdb: IGDBClient;
+  private readonly appWindow: BrowserWindow;
 
   constructor(props: GamesManagerProps) {
     this.cacheStore = props.cacheStore;
     this.igdb = props.igdb;
+    this.appWindow = props.appWindow;
 
     this.initListeners();
   }
@@ -44,6 +49,50 @@ export default class GamesManager {
 
     ipcMain.handle("add-games", async (_, games: AddGamesProps) => {
       await this.addGames(games);
+    });
+
+    ipcMain.handle("launch-game", async (_, gamePath: string) => {
+      await this.launchGame(gamePath);
+    });
+  }
+
+  async launchGame(gamePath: string) {
+    return new Promise((resolve, reject) => {
+      const pathExists = fs.existsSync(gamePath);
+
+      if (!pathExists) reject(new Error("Game not found."));
+
+      const execFile = path.basename(gamePath);
+      const directory = path.dirname(gamePath);
+
+      // let gameExit = false;
+
+      const gameProcess = child_process.exec(
+        execFile,
+        {
+          cwd: directory,
+        },
+        (error) => {
+          if (error) return reject(error);
+
+          // gameExit = true;
+          this.appWindow.webContents.send("game-exit", gamePath);
+        }
+      );
+
+      // gameProcess.once("disconnect", () => console.log("disconnect"));
+      // gameProcess.once("close", () => console.log("close"));
+      // gameProcess.once("exit", () => console.log("exit"));
+
+      // if (gameProcess.pid) {
+      //   psNode.lookup({ pid: gameProcess.pid }, (error, result) => {
+      //     const p = result[0];
+
+      //     console.log("PACKAGE TEST", p);
+      //   });
+      // }
+
+      resolve({});
     });
   }
 
@@ -74,7 +123,7 @@ export default class GamesManager {
 
       if (!userGames) return [];
 
-      const games: GameBaseModel[] = [];
+      const games: UserGameModelFull[] = [];
 
       for (const userGame of Object.values(userGames)) {
         const gameModel = await this.cacheStore.load<GameBaseCachedModel>(
@@ -89,6 +138,7 @@ export default class GamesManager {
           );
 
           games.push({
+            ...userGame.data,
             ...gameModel.data,
             cover: coverModel
               ? {

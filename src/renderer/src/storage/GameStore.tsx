@@ -1,24 +1,30 @@
 import { createContext, useCallback, useContext, useState } from "react";
-import type { GameBaseModel, GameInfoModel } from "src/models/GameModel";
+import type { GameInfoModel, UserGameModelFull } from "src/models/GameModel";
+import { useGamesList } from "./GamesListStore";
 
 interface GameStore {
-  game: GameBaseModel | null;
+  game: UserGameModelFull | null;
   info: GameInfoModel | null;
   loading: boolean;
   headerImage: string | null;
-  setGame: (baseGame: GameBaseModel) => void;
+  isLoadingGame: boolean;
+  launchGame: () => void;
+  setGame: (baseGame: UserGameModelFull) => void;
   close: () => void;
 }
 
 const GameStoreContext = createContext<GameStore | null>(null);
 
 export const GameStoreProvider = ({ children }: { children: React.ReactNode }) => {
-  const [game, setGame] = useState<GameBaseModel | null>(null);
+  const { addLaunchedGame } = useGamesList();
+
+  const [game, setGame] = useState<UserGameModelFull | null>(null);
   const [info, setGameInfo] = useState<GameInfoModel | null>(null);
   const [headerImage, setHeaderImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isLoadingGame, setIsLoadingGame] = useState(false);
 
-  const handleLoadGame = useCallback(async (baseGame: GameBaseModel) => {
+  const handleLoadGame = useCallback(async (baseGame: UserGameModelFull) => {
     try {
       const { invoke } = window.bridge.ipcRenderer;
 
@@ -54,9 +60,35 @@ export const GameStoreProvider = ({ children }: { children: React.ReactNode }) =
     setHeaderImage(null);
   }, []);
 
+  const handleLaunchGame = useCallback(async () => {
+    try {
+      const { invoke } = window.bridge.ipcRenderer;
+
+      setIsLoadingGame(true);
+
+      await invoke("launch-game", game!.relatedExecution!);
+
+      addLaunchedGame(game!.relatedExecution!);
+
+      setIsLoadingGame(false);
+    } catch (error) {
+      setIsLoadingGame(false);
+      console.error(error);
+    }
+  }, [game]);
+
   return (
     <GameStoreContext.Provider
-      value={{ game, info, loading, headerImage, setGame: handleLoadGame, close: handleCloseGame }}
+      value={{
+        game,
+        info,
+        loading,
+        headerImage,
+        isLoadingGame,
+        setGame: handleLoadGame,
+        close: handleCloseGame,
+        launchGame: handleLaunchGame,
+      }}
     >
       {children}
     </GameStoreContext.Provider>

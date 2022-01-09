@@ -20,10 +20,6 @@ new ConfigStore();
 const cacheStore = new CacheStore();
 const shell = new PowerShell();
 const igdb = new IGDBClient(cacheStore);
-const manager = new GamesManager({
-  cacheStore,
-  igdb,
-});
 
 new GamesScanner({
   cacheStore,
@@ -54,6 +50,12 @@ async function mainWin() {
     win.maximize();
     win.webContents.openDevTools();
   }
+
+  new GamesManager({
+    cacheStore,
+    igdb,
+    appWindow: win,
+  });
 
   // Test active push message to Renderer-process.
   win.webContents.on("did-finish-load", () => {
