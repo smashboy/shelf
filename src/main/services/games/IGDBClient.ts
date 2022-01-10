@@ -1,5 +1,6 @@
 import igdb from "igdb-api-node";
 import fetch from "node-fetch";
+import electronLog from "electron-log";
 import CacheStore from "../store/CacheStore";
 import type {
   GameBaseModel,
@@ -27,17 +28,26 @@ export default class IGDBClient {
     "wewwkydboi2wjojajzmn84gnsgfo6s"
   );
 
+  private readonly log = electronLog.create("igdb-client");
+
   private readonly cacheStore: CacheStore;
 
   constructor(cacheStore: CacheStore) {
     this.cacheStore = cacheStore;
+
+    this.log.transports.console.level = "error";
+    this.log.transports.file.fileName = "igdb-client";
   }
 
   async getGameInfo(gameSlug: string, gameId: number) {
     try {
+      this.log.log(`Get game info: ${gameSlug} | ${gameId}`);
+
       const cachedInfo = await this.cacheStore.load<GameInfoCachedModel>("info", gameSlug);
 
       if (cachedInfo) {
+        this.log.log("Game info cache found");
+
         const gameInfo: GameInfoModel = {
           totalRating: cachedInfo.data.totalRating,
           totalRatingCount: cachedInfo.data.totalRatingCount,
@@ -77,6 +87,8 @@ export default class IGDBClient {
 
         return gameInfo;
       }
+
+      this.log.log("Fetching new game info");
 
       const response = await this.client
         .fields([
@@ -161,12 +173,16 @@ export default class IGDBClient {
 
       return gameInfo;
     } catch (error) {
-      console.error(error);
-      // return null;
+      // @ts-ignore
+      this.log.error(`Get game info error ${error?.message}`);
+      // TODO: maybe error throw
+      return null;
     }
   }
 
   private async loadThemes(themesIds: number[]) {
+    this.log.log(`Loading themes ${themesIds.join(", ")}`);
+
     const themes: GenreModel[] = [];
 
     for (const id of themesIds) {
@@ -174,9 +190,13 @@ export default class IGDBClient {
         const cachedTheme = await this.cacheStore.load<GenreModel>("themes", id);
 
         if (cachedTheme) {
+          this.log.log(`Theme cache found ${id}`);
+
           themes.push(cachedTheme.data);
           continue;
         }
+
+        this.log.log(`Fetching new theme ${id}`);
 
         const response = await this.client
           .fields(["name", "checksum"])
@@ -196,7 +216,8 @@ export default class IGDBClient {
 
         themes.push(model);
       } catch (error) {
-        console.error(error);
+        // @ts-ignore
+        this.log.error(`Load theme error ${id} ${error?.message}`);
         continue;
       }
     }
@@ -205,6 +226,8 @@ export default class IGDBClient {
   }
 
   private async loadGameModes(modesIds: number[]) {
+    this.log.log(`Loading game modes ${modesIds.join(", ")}`);
+
     const modes: GameModeModel[] = [];
 
     for (const id of modesIds) {
@@ -212,9 +235,12 @@ export default class IGDBClient {
         const cachedMode = await this.cacheStore.load<GameModeModel>("game-modes", id);
 
         if (cachedMode) {
+          this.log.log(`Game mode cache found ${id}`);
           modes.push(cachedMode.data);
           continue;
         }
+
+        this.log.log(`Fetching new game mode ${id}`);
 
         const response = await this.client
           .fields(["checksum", "name"])
@@ -234,6 +260,8 @@ export default class IGDBClient {
 
         modes.push(model);
       } catch (error) {
+        // @ts-ignore
+        this.log.error(`Load game mode error ${id} ${error?.message}`);
         continue;
       }
     }
@@ -242,15 +270,21 @@ export default class IGDBClient {
   }
 
   private async loadArtworks(gameId: number, artworksIds: number[]) {
+    this.log.log(`Loading artworks ${gameId} ${artworksIds.join(", ")}`);
+
     const artworks: MediaModel[] = [];
 
     for (const id of artworksIds) {
       try {
         const cachedArtwork = await this.cacheStore.load<MediaModel>("artworks", id);
 
-        if (cachedArtwork)
+        if (cachedArtwork) {
           artworks.push({ ...cachedArtwork.data, data: cachedArtwork.media.artwork });
+          this.log.log(`Artwork cache found ${gameId} ${id}`);
+        }
       } catch (error) {
+        // @ts-ignore
+        this.log.error(`Load artwork cache error ${gameId} ${id} ${error?.message}`);
         continue;
       }
     }
@@ -258,6 +292,8 @@ export default class IGDBClient {
     if (artworks.length > 0) return artworks;
 
     try {
+      this.log.log(`Fetching new artworkds data ${gameId}`);
+
       const response = await this.client
         .fields(["checksum", "width", "height", "image_id"])
         .where(`game = ${gameId}`)
@@ -299,26 +335,35 @@ export default class IGDBClient {
 
           artworks.push(artwork);
         } catch (error) {
+          // @ts-ignore
+          this.log.error(`Load artwork error ${gameId} ${error?.message}`);
           continue;
         }
       }
     } catch (error) {
-      console.error(error);
+      // @ts-ignore
+      this.log.error(`Fetch artworks error ${gameId} ${error?.message}`);
     }
 
     return artworks;
   }
 
   private async loadSreenshots(gameId: number, screenshotsIds: number[]) {
+    this.log.log(`Loading screenshots ${gameId} ${screenshotsIds.join(", ")}`);
+
     const screenshots: MediaModel[] = [];
 
     for (const id of screenshotsIds) {
       try {
         const cachedScreenshot = await this.cacheStore.load<MediaModel>("screenshots", id);
 
-        if (cachedScreenshot)
+        if (cachedScreenshot) {
           screenshots.push({ ...cachedScreenshot.data, data: cachedScreenshot.media.screenshot });
+          this.log.log(`Screenshot cache found ${gameId} ${id}`);
+        }
       } catch (error) {
+        // @ts-ignore
+        this.log.error(`Load screenshot cache error ${gameId} ${id} ${error?.message}`);
         continue;
       }
     }
@@ -326,6 +371,8 @@ export default class IGDBClient {
     if (screenshots.length > 0) return screenshots;
 
     try {
+      this.log.log(`Fetching new screenshots data ${gameId}`);
+
       const response = await this.client
         .fields(["checksum", "width", "height", "image_id"])
         .where(`game = ${gameId}`)
@@ -367,25 +414,35 @@ export default class IGDBClient {
 
           screenshots.push(screenshot);
         } catch (error) {
+          // @ts-ignore
+          this.log.error(`Load screenshot error ${gameId} ${error?.message}`);
           continue;
         }
       }
     } catch (error) {
-      console.error(error);
+      // @ts-ignore
+      this.log.error(`Fetch screenshots error ${gameId} ${error?.message}`);
     }
 
     return screenshots;
   }
 
   private async loadWebsites(gameId: number, websitesIds: number[]) {
+    this.log.log(`Loading websites ${gameId} ${websitesIds.join(", ")}`);
+
     const websites: WebsiteModel[] = [];
 
     for (const id of websitesIds) {
       try {
         const cachedWebsite = await this.cacheStore.load<WebsiteModel>("websites", id);
 
-        if (cachedWebsite) websites.push(cachedWebsite.data);
+        if (cachedWebsite) {
+          this.log.log(`Website cache found ${gameId} ${id}`);
+          websites.push(cachedWebsite.data);
+        }
       } catch (error) {
+        // @ts-ignore
+        this.log.error(`Load website cache error ${gameId} ${id} ${error?.message}`);
         continue;
       }
     }
@@ -393,6 +450,8 @@ export default class IGDBClient {
     if (websites.length > 0) return websites;
 
     try {
+      this.log.log(`Fetching new websites data ${gameId}`);
+
       const response = await this.client
         .fields(["url", "checksum", "trusted", "category"])
         .where(`game = ${gameId}`)
@@ -415,25 +474,35 @@ export default class IGDBClient {
 
           websites.push(model);
         } catch (error) {
+          // @ts-ignore
+          this.log.error(`Load website error ${gameId} ${error?.message}`);
           continue;
         }
       }
     } catch (error) {
-      console.error(error);
+      // @ts-ignore
+      this.log.error(`Fetch websites error ${gameId} ${error?.message}`);
     }
 
     return websites;
   }
 
   private async loadCompanies(gameId: number, companiesIds: number[]) {
+    this.log.log(`Loading companies ${gameId} ${companiesIds.join(", ")}`);
+
     const companies: CompanyModel[] = [];
 
     for (const id of companiesIds) {
       try {
         const cachedCompany = await this.cacheStore.load<CompanyModel>("companies", id);
 
-        if (cachedCompany) companies.push(cachedCompany.data);
+        if (cachedCompany) {
+          companies.push(cachedCompany.data);
+          this.log.log(`Company cache found ${gameId} ${id}`);
+        }
       } catch (error) {
+        // @ts-ignore
+        this.log.error(`Load company cache error ${gameId} ${id} ${error?.message}`);
         continue;
       }
     }
@@ -441,6 +510,8 @@ export default class IGDBClient {
     if (companies.length > 0) return companies;
 
     try {
+      this.log.log(`Fetching new companies data ${gameId}`);
+
       const involvedCompaniesResponse = await this.client
         .fields(["company", "developer", "publisher"])
         .where(`game = ${gameId}`)
@@ -475,17 +546,22 @@ export default class IGDBClient {
             companies.push(model);
           }
         } catch (error) {
+          // @ts-ignore
+          this.log.error(`Load company error ${gameId} ${error?.message}`);
           continue;
         }
       }
     } catch (error) {
-      console.error(error);
+      // @ts-ignore
+      this.log.error(`Fetch companies error ${gameId} ${error?.message}`);
     }
 
     return companies;
   }
 
   private async loadGenres(ids: number[]) {
+    this.log.log(`Loading genres ${ids.join(", ")}`);
+
     const genres: GenreModel[] = [];
 
     for (const id of ids) {
@@ -493,6 +569,7 @@ export default class IGDBClient {
         const cachedGenre = await this.cacheStore.load<GenreModel>("genres", id);
 
         if (cachedGenre) {
+          this.log.log(`Genre cache found ${id}`);
           genres.push(cachedGenre.data);
           continue;
         }
@@ -515,7 +592,8 @@ export default class IGDBClient {
 
         genres.push(model);
       } catch (error) {
-        console.error(error);
+        // @ts-ignore
+        this.log.error(`Load genre error ${id} ${error?.message}`);
         continue;
       }
     }
@@ -525,9 +603,14 @@ export default class IGDBClient {
 
   private async loadCover(gameId: number): Promise<MediaModel | null> {
     try {
+      this.log.log(`Loading game cover ${gameId}`);
+
       const cachedCover = await this.cacheStore.load<MediaModel>("covers", gameId);
 
-      if (cachedCover) return { ...cachedCover.data, data: cachedCover.media.cover };
+      if (cachedCover) {
+        this.log.log(`Game cover cache found ${gameId}`);
+        return { ...cachedCover.data, data: cachedCover.media.cover };
+      }
 
       const coverRespose = await this.client
         .fields(["checksum", "width", "height", "image_id"])
@@ -568,12 +651,15 @@ export default class IGDBClient {
 
       return cover;
     } catch (error) {
-      console.error(error);
+      // @ts-ignore
+      this.log.error(`Load game cover error ${gameId} ${error?.message}`);
       return null;
     }
   }
 
   async searchGames(programs: SearchGamesProps) {
+    this.log.log(`Searching games ${programs.map((program) => program.name).join(", ")}`);
+
     const games: Record<string, GameBaseModel[]> = {};
     const cachedGames = await this.cacheStore.loadBucket("base");
 
@@ -590,6 +676,8 @@ export default class IGDBClient {
             const cachedGame = cachedGames[slug];
 
             if (cachedGame) {
+              this.log.info(`Cached game found ${slug}`);
+
               const data = cachedGame.data as GameBaseCachedModel;
 
               const cover = await this.loadCover(data.id);
@@ -635,7 +723,8 @@ export default class IGDBClient {
 
             await this.cacheStore.save("base", baseModel.slug, baseModel);
           } catch (error) {
-            // console.error(error);
+            // @ts-ignore
+            this.log.error(`Load game data error ${error?.message}`);
             continue;
           }
         }
@@ -652,7 +741,8 @@ export default class IGDBClient {
 
         games[program.key] = loadedGames;
       } catch (error) {
-        // console.error(error);
+        // @ts-ignore
+        this.log.error(`Fetch game data error ${error?.message}`);
         continue;
       }
     }

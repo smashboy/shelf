@@ -1,4 +1,5 @@
 import { timeout } from "@/utils";
+import { useSnackbar } from "notistack";
 import { createContext, useCallback, useContext, useState } from "react";
 import type { GameInfoModel, UserGameModelFull } from "src/models/GameModel";
 import { useGamesList } from "./GamesListStore";
@@ -17,6 +18,8 @@ interface GameStore {
 const GameStoreContext = createContext<GameStore | null>(null);
 
 export const GameStoreProvider = ({ children }: { children: React.ReactNode }) => {
+  const { enqueueSnackbar } = useSnackbar();
+
   const { addLaunchedGame } = useGamesList();
 
   const [game, setGame] = useState<UserGameModelFull | null>(null);
@@ -76,7 +79,11 @@ export const GameStoreProvider = ({ children }: { children: React.ReactNode }) =
       setIsLoadingGame(false);
     } catch (error) {
       setIsLoadingGame(false);
-      console.error(error);
+      // @ts-ignore
+      enqueueSnackbar(error?.message || "Error launching game", {
+        variant: "error",
+        preventDuplicate: true,
+      });
     }
   }, [game]);
 

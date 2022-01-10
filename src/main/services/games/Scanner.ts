@@ -1,6 +1,7 @@
 import path from "path";
 import fs from "fs/promises";
 import { ipcMain, dialog } from "electron";
+import electronLog from "electron-log";
 import { CancelablePromise, cancelable } from "cancelable-promise";
 import PowerShell from "../windows/PowerShell";
 import type { ScannedModel } from "src/models/ScannedModel";
@@ -19,12 +20,17 @@ export default class GamesScanner {
   private readonly shell: PowerShell;
   private readonly igdb: IGDBClient;
 
+  private readonly log = electronLog.create("scanner");
+
   private readonly _maxWalkDepth = 7;
 
   constructor(props: GamesScannerProps) {
     this.cacheStore = props.cacheStore;
     this.shell = props.shell;
     this.igdb = props.igdb;
+
+    this.log.transports.console.level = "error";
+    this.log.transports.file.fileName = "scanner";
 
     this.initListeners();
   }
@@ -74,8 +80,14 @@ export default class GamesScanner {
   }
 
   private scanPrograms() {
-    return new CancelablePromise(async (resolve) => {
+    return new CancelablePromise(async (resolve, reject, onCancel) => {
       try {
+        this.log.log("Launching programs scanner...");
+
+        onCancel(() => {
+          this.log.log("Cancel programs scanner...");
+        });
+
         const result = await this.shell.runCommands(
           `Get-ItemProperty HKLM:\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\* | Select-Object | ConvertTo-JSON`
         );
@@ -108,18 +120,26 @@ export default class GamesScanner {
 
         resolve(programs);
       } catch (error) {
+        // @ts-ignore
+        this.log.error(`Scan programs error ${error?.message}`);
+        reject(error);
         // console.error("SCAN PROGRAMS ERROR", error);
       }
     });
   }
 
   private scanDirectory() {
-    return new CancelablePromise(async (resolve, _, onCancel) => {
+    return new CancelablePromise(async (resolve, reject, onCancel) => {
       try {
+        this.log.log("Launching directory scanner...");
+
         let listPromise: CancelablePromise | null = null;
 
         onCancel(() => {
-          if (listPromise) listPromise.cancel();
+          if (listPromise) {
+            this.log.log("Directory scanner cancel...");
+            listPromise.cancel();
+          }
         });
 
         const response = await dialog.showOpenDialog({
@@ -140,12 +160,17 @@ export default class GamesScanner {
 
         resolve(list);
       } catch (error) {
+        // @ts-ignore
+        this.log.error(`Scan directory error ${error?.message}`);
+        reject(error);
         // console.error("SCAN DIRECTORY ERROR", error);
       }
     });
   }
 
   private async scanFile() {
+    this.log.log("Launching file scanner...");
+
     const response = await dialog.showOpenDialog({
       title: "Select file...",
       buttonLabel: "Select",

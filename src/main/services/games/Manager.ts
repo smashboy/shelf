@@ -2,6 +2,7 @@ import crypto from "crypto";
 import path from "path";
 import fs from "fs";
 // import psNode from "ps-node";
+import electronLog from "electron-log";
 import child_process from "child_process";
 import { BrowserWindow, ipcMain } from "electron";
 import type {
@@ -25,12 +26,16 @@ interface GamesManagerProps {
 export default class GamesManager {
   private readonly cacheStore: CacheStore;
   private readonly igdb: IGDBClient;
+  private readonly log = electronLog.create("manager");
   private readonly appWindow: BrowserWindow;
 
   constructor(props: GamesManagerProps) {
     this.cacheStore = props.cacheStore;
     this.igdb = props.igdb;
     this.appWindow = props.appWindow;
+
+    this.log.transports.console.level = "error";
+    this.log.transports.file.fileName = "manager";
 
     this.initListeners();
   }
@@ -58,9 +63,14 @@ export default class GamesManager {
 
   async launchGame(gamePath: string) {
     return new Promise((resolve, reject) => {
+      this.log.log(`Launching game ${gamePath}`);
+
       const pathExists = fs.existsSync(gamePath);
 
-      if (!pathExists) reject(new Error("Game not found."));
+      if (!pathExists) {
+        this.log.error(`Launching game not found ${gamePath}`);
+        return reject(new Error("Game not found."));
+      }
 
       const execFile = path.basename(gamePath);
       const directory = path.dirname(gamePath);
@@ -69,6 +79,8 @@ export default class GamesManager {
 
       const onGameExit = () => {
         if (gameExit) return;
+
+        this.log.log(`Game exit ${gamePath}`);
 
         gameExit = true;
         this.appWindow.webContents.send("game-exit", gamePath);
@@ -85,6 +97,7 @@ export default class GamesManager {
         (error) => {
           if (error) {
             onGameExit();
+            this.log.log(`Game launch error ${gamePath} ${error.message}`);
             return reject(error);
           }
 
@@ -130,12 +143,12 @@ export default class GamesManager {
   }
 
   async getGamesList() {
+    const games: UserGameModelFull[] = [];
+
     try {
       const userGames = await this.cacheStore.loadBucket<UserGameModel>("user-games");
 
       if (!userGames) return [];
-
-      const games: UserGameModelFull[] = [];
 
       for (const userGame of Object.values(userGames)) {
         const gameModel = await this.cacheStore.load<GameBaseCachedModel>(
@@ -164,7 +177,9 @@ export default class GamesManager {
 
       return games;
     } catch (error) {
-      console.error(error);
+      // @ts-ignore
+      this.log.error(`Load games list error  ${error?.message}`);
+      return games;
     }
   }
 }
