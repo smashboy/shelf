@@ -1,3 +1,4 @@
+import { timeout } from "@/utils";
 import { createContext, useCallback, useContext, useState } from "react";
 import type { GameInfoModel, UserGameModelFull } from "src/models/GameModel";
 import { useGamesList } from "./GamesListStore";
@@ -30,6 +31,8 @@ export const GameStoreProvider = ({ children }: { children: React.ReactNode }) =
 
       setGame(baseGame);
       setLoading(true);
+
+      await timeout(500);
 
       const info = (await invoke("get-game-info", {
         gameSlug: baseGame.slug,

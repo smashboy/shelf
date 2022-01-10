@@ -39,7 +39,6 @@ export default function GameDialog() {
             sx={{
               color: (theme) => theme.palette.text.primary,
               zIndex: 10,
-
               position: "absolute",
               width: "100%",
               backgroundColor: (theme) => alpha(theme.palette.background.default, 0.25),

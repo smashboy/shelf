@@ -65,7 +65,17 @@ export default class GamesManager {
       const execFile = path.basename(gamePath);
       const directory = path.dirname(gamePath);
 
-      // let gameExit = false;
+      let gameExit = false;
+
+      const onGameExit = () => {
+        if (gameExit) return;
+
+        gameExit = true;
+        this.appWindow.webContents.send("game-exit", gamePath);
+        gameProcess.removeListener("disconnect", onGameExit);
+        gameProcess.removeListener("close", onGameExit);
+        gameProcess.removeListener("exit", onGameExit);
+      };
 
       const gameProcess = child_process.exec(
         execFile,
@@ -73,16 +83,18 @@ export default class GamesManager {
           cwd: directory,
         },
         (error) => {
-          if (error) return reject(error);
+          if (error) {
+            onGameExit();
+            return reject(error);
+          }
 
-          // gameExit = true;
-          this.appWindow.webContents.send("game-exit", gamePath);
+          onGameExit();
         }
       );
 
-      // gameProcess.once("disconnect", () => console.log("disconnect"));
-      // gameProcess.once("close", () => console.log("close"));
-      // gameProcess.once("exit", () => console.log("exit"));
+      gameProcess.once("disconnect", onGameExit);
+      gameProcess.once("close", onGameExit);
+      gameProcess.once("exit", onGameExit);
 
       // if (gameProcess.pid) {
       //   psNode.lookup({ pid: gameProcess.pid }, (error, result) => {
