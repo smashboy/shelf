@@ -178,7 +178,7 @@ export default class GamesManager {
       return games;
     } catch (error) {
       // @ts-ignore
-      this.log.error(`Load games list error  ${error?.message}`);
+      this.log.error(`Load games list error ${error?.message}`);
       return games;
     }
   }
