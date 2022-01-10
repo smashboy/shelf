@@ -1,14 +1,5 @@
 import { useCallback, useState } from "react";
-import {
-  Box,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Grid,
-  Typography,
-  Badge,
-} from "@mui/material";
+import { Box, Dialog, DialogTitle, DialogContent, DialogActions, Grid, Badge } from "@mui/material";
 import IconButton from "@/ui/components/IconButton";
 import { MdAdd as AddIcon } from "react-icons/md";
 import { GameBaseModel } from "src/models/GameModel";
@@ -72,31 +63,8 @@ export default function GameSelector(props: GameSelectorProps) {
                 key={game.slug}
                 game={game}
                 gridSize={3}
+                onClick={handleSetGame(game)}
                 selected={game.slug === selectedGame?.slug}
-                backdrop={
-                  <Grid container spacing={1} sx={{ paddingX: 0.5 }}>
-                    <Grid container item xs={12} justifyContent="center">
-                      <Button onClick={handleSetGame(game)} variant="outlined">
-                        {game.slug === selectedGame?.slug ? "Cancel" : "Select"}
-                      </Button>
-                    </Grid>
-                    <Grid
-                      container
-                      item
-                      xs={12}
-                      justifyContent="center"
-                      sx={{ textAlign: "center" }}
-                    >
-                      <Typography
-                        variant="subtitle1"
-                        component="div"
-                        // sx={{ position: "absolute", bottom: 5, left: 5, width: "100%" }}
-                      >
-                        {game.name}
-                      </Typography>
-                    </Grid>
-                  </Grid>
-                }
               />
             ))}
           </Grid>
