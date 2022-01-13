@@ -70,6 +70,11 @@ export default class GamesScanner {
       return games;
     });
 
+    ipcMain.handle("text-search-games", async (_, query: string) => {
+      const games = await this.igdb.textSearchGames(query);
+      return games;
+    });
+
     ipcMain.on("cancel-programs-scanner", () => {
       if (scanProgramsPromise) scanProgramsPromise.cancel();
     });

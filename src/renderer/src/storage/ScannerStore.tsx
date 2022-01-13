@@ -17,6 +17,7 @@ interface ScannerStore {
   addGames: () => Promise<void>;
   setFilter: (newFilter: string) => void;
   searchGames: () => Promise<void>;
+  textSearchGames: (executionPath: string, query: string) => Promise<void>;
   selectModels: (selectedIndexes: number[]) => void;
   detect: () => Promise<void>;
   cancelDetect: () => Promise<void>;
@@ -213,6 +214,33 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
     }
   }, [selectedPrograms]);
 
+  const handleTextSearchGames = useCallback(async (executionPath: string, query: string) => {
+    try {
+      const { invoke } = window.bridge.ipcRenderer;
+
+      console.log("HELLO");
+
+      const data = (await invoke("text-search-games", query)) as GameBaseModel[];
+
+      console.log(data);
+
+      setGames((prevState) => {
+        const newState = { ...prevState };
+
+        const oldGames = newState[executionPath] || [];
+        const oldGamesIds = oldGames.map((game) => game.id);
+
+        const newGames = data.filter((game) => !oldGamesIds.includes(game.id));
+
+        newState[executionPath] = [...newGames, ...oldGames];
+
+        return newState;
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  }, []);
+
   const handleSelectGame = useCallback(
     (key: string, game: GameBaseModel) =>
       setSelectedPrograms((prevState) => ({
@@ -261,6 +289,7 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
         setFilter: handleSetFilter,
         selectGame: handleSelectGame,
         searchGames: handleSearchGames,
+        textSearchGames: handleTextSearchGames,
         detect: handleDetect,
         cancelDetect: handleCancelDetect,
         cancelScan: handleCancelScan,

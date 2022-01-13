@@ -621,9 +621,9 @@ export default class IGDBClient {
 
       if (!coverData) return null;
 
-      const imageResponse = await fetch(
-        `https://images.igdb.com/igdb/image/upload/t_original/${coverData.image_id}.png`
-      );
+      const imageUrl = `https://images.igdb.com/igdb/image/upload/t_original/${coverData.image_id}.png`;
+
+      const imageResponse = await fetch(imageUrl);
 
       const buffer = await imageResponse.arrayBuffer();
 
@@ -654,6 +654,54 @@ export default class IGDBClient {
       // @ts-ignore
       this.log.error(`Load game cover error ${gameId} ${error?.message}`);
       return null;
+    }
+  }
+
+  async textSearchGames(query: string) {
+    this.log.log(`Searching games ${query}`);
+
+    const games: GameBaseModel[] = [];
+
+    try {
+      const gamesResponse = await this.client
+        .fields(["name", "cover", "slug", "checksum"])
+        .limit(25)
+        .search(query.toLowerCase())
+        // .where("status = 0")
+        .request("/games");
+
+      const gamesData = gamesResponse.data || [];
+
+      if (gamesData.length === 0) return games;
+
+      for (const game of gamesData) {
+        try {
+          const baseModel = {
+            id: game.id,
+            name: game.name,
+            slug: `custom-${game.slug}`,
+            hash: game.checksum,
+          };
+
+          const cover = await this.loadCover(baseModel.id);
+
+          const loadedModel = { ...baseModel, cover };
+
+          games.push(loadedModel);
+
+          await this.cacheStore.save("base", baseModel.slug, baseModel);
+        } catch (error) {
+          // @ts-ignore
+          this.log.error(`Load game data error ${error?.message}`);
+          continue;
+        }
+      }
+
+      return games;
+    } catch (error) {
+      // @ts-ignore
+      this.log.error(`Fetch games data error ${error?.message}`);
+      return games;
     }
   }
 
@@ -700,7 +748,7 @@ export default class IGDBClient {
           // .where("status = 0")
           .request("/games");
 
-        const gamesData = gamesResponse.data;
+        const gamesData = gamesResponse.data || [];
 
         if (gamesData.length === 0) continue;
 
@@ -742,7 +790,7 @@ export default class IGDBClient {
         games[program.key] = loadedGames;
       } catch (error) {
         // @ts-ignore
-        this.log.error(`Fetch game data error ${error?.message}`);
+        this.log.error(`Fetch games data error ${error?.message}`);
         continue;
       }
     }
