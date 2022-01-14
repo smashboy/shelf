@@ -112,18 +112,17 @@ export default function Carousel() {
                   // @ts-ignore
                   type={image.key}
                   imageId={image.id}
-                  height="auto"
                   containerProps={{
                     width: "80%",
                     display: "flex",
                     justifyContent: "center",
                     alignItems: "center",
+                    minHeight: "500px",
+                    borderRadius: "4px",
                   }}
-                  // height="270px"
                   sx={{
                     cursor: "pointer",
                     borderRadius: "4px",
-                    // maxHeight: "270px",
                   }}
                 />
               </Box>

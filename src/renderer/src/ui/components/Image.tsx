@@ -79,7 +79,7 @@ export default function Image(props: ImageProps) {
   return (
     <Box {...containerProps} height={height}>
       {image.data && (
-        <Box {...otherProps} src={image.data} component="img" width="100%" height={height} />
+        <Box {...otherProps} src={image.data} component="img" width="100%" height="100%" />
       )}
     </Box>
   );
