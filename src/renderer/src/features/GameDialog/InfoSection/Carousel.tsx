@@ -4,6 +4,7 @@ import { makeStyles } from "@mui/styles";
 import { Backdrop, Card, CardActionArea, CardMedia, Grid } from "@mui/material";
 import { useGame } from "@/storage/GameStore";
 import { Box } from "@mui/system";
+import Image from "@/ui/components/Image";
 
 const useStyles = makeStyles({
   carouselRoot: {
@@ -73,7 +74,10 @@ export default function Carousel() {
   }, []);
 
   const images = useMemo(
-    () => [...info!.screenshots, ...info!.artworks],
+    () => [
+      ...info!.screenshots.map((id) => ({ key: "screenshot", id })),
+      ...info!.artworks.map((id) => ({ key: "artwork", id })),
+    ],
     [info?.artworks, info?.screenshots]
   );
 
@@ -94,16 +98,29 @@ export default function Carousel() {
               },
             }}
           >
-            {images.map((media) => (
-              <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                <img
-                  key={media.hash}
-                  onClick={() => handleShowImage(media.data)}
-                  src={media.data}
-                  alt={media.hash}
-                  width="80%"
+            {images.map((image) => (
+              <Box
+                key={`${image.key}-${image.id}`}
+                sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <Image
+                  //  onClick={() => handleShowImage(media.data)}
+                  // @ts-ignore
+                  type={image.key}
+                  imageId={image.id}
+                  height="auto"
+                  containerProps={{
+                    width: "80%",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
                   // height="270px"
-                  style={{
+                  sx={{
                     cursor: "pointer",
                     borderRadius: "4px",
                     // maxHeight: "270px",
@@ -113,7 +130,7 @@ export default function Carousel() {
             ))}
           </MUICarousel>
         </Grid>
-        <Grid container item xs={12} justifyContent="center">
+        {/* <Grid container item xs={12} justifyContent="center">
           <Box
             ref={previewContainerRef}
             sx={{ overflowX: "auto", width: "65%", whiteSpace: "nowrap" }}
@@ -128,7 +145,7 @@ export default function Carousel() {
               />
             ))}
           </Box>
-        </Grid>
+        </Grid> */}
       </Grid>
       <Backdrop
         open={Boolean(image)}

@@ -1,16 +1,10 @@
 import crypto from "crypto";
 import path from "path";
 import fs from "fs";
-// import psNode from "ps-node";
 import electronLog from "electron-log";
 import child_process from "child_process";
 import { BrowserWindow, ipcMain } from "electron";
-import type {
-  GameBaseCachedModel,
-  MediaModel,
-  UserGameModel,
-  UserGameModelFull,
-} from "src/models/GameModel";
+import type { GameBaseModel, UserGameModel, UserGameModelFull } from "src/models/GameModel";
 import CacheStore from "../store/CacheStore";
 import IGDBClient from "./IGDBClient";
 
@@ -109,14 +103,6 @@ export default class GamesManager {
       gameProcess.once("close", onGameExit);
       gameProcess.once("exit", onGameExit);
 
-      // if (gameProcess.pid) {
-      //   psNode.lookup({ pid: gameProcess.pid }, (error, result) => {
-      //     const p = result[0];
-
-      //     console.log("PACKAGE TEST", p);
-      //   });
-      // }
-
       resolve({});
     });
   }
@@ -151,26 +137,12 @@ export default class GamesManager {
       if (!userGames) return [];
 
       for (const userGame of Object.values(userGames)) {
-        const gameModel = await this.cacheStore.load<GameBaseCachedModel>(
-          "base",
-          userGame.data.gameSlug
-        );
+        const gameModel = await this.cacheStore.load<GameBaseModel>("base", userGame.data.gameSlug);
 
         if (gameModel) {
-          const coverModel = await this.cacheStore.load<MediaModel>(
-            "covers",
-            gameModel.data.id.toString()
-          );
-
           games.push({
             ...userGame.data,
             ...gameModel.data,
-            cover: coverModel
-              ? {
-                  ...coverModel.data,
-                  data: coverModel.media.cover,
-                }
-              : null,
           });
         }
       }

@@ -108,11 +108,9 @@ export default class GamesScanner {
 
             if (isValidExeFile(executionPath)) {
               try {
-                const icon = await this.shell.getFileIcon(executionPath);
                 const program: ScannedModel = {
                   name,
                   executionPath,
-                  icon,
                 };
 
                 programs.push(program);
@@ -196,7 +194,6 @@ export default class GamesScanner {
 
       const model: ScannedModel = {
         name,
-        icon: fileInfo.icon,
         executionPath: filePath,
       };
 
@@ -240,13 +237,13 @@ export default class GamesScanner {
               if (cachedData) {
                 const scannedData: ScannedModel = {
                   ...cachedData.data,
-                  icon: cachedData.media?.icon || null,
                 };
                 results.push(scannedData);
                 continue;
               }
 
               const infoPromise = this.shell.getFileInfo(filePath);
+
               promises.push(infoPromise);
               const info = await infoPromise;
 
@@ -258,15 +255,9 @@ export default class GamesScanner {
                 results.push({
                   executionPath: filePath,
                   name,
-                  icon: info.icon,
                 });
 
-                await this.cacheStore.save(
-                  "execution-files",
-                  filePath,
-                  newData2Cache,
-                  info.icon ? { icon: info.icon } : undefined
-                );
+                await this.cacheStore.save("execution-files", filePath, newData2Cache);
               }
             }
           } catch (error) {

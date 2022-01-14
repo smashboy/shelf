@@ -218,11 +218,7 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
     try {
       const { invoke } = window.bridge.ipcRenderer;
 
-      console.log("HELLO");
-
       const data = (await invoke("text-search-games", query)) as GameBaseModel[];
-
-      console.log(data);
 
       setGames((prevState) => {
         const newState = { ...prevState };

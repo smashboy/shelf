@@ -3,8 +3,8 @@ import { Box } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { useScanner } from "@/storage/ScannerStore";
 import LoadingOverlay from "./LoadingOverlay";
-import { ProgramIcon } from "./ScannedProgramsList";
 import GameSelector from "./GameSelector";
+import IconImage from "@/ui/components/IconImage";
 
 const columns: GridColDef[] = [
   {
@@ -15,7 +15,7 @@ const columns: GridColDef[] = [
     sortable: false,
     renderCell: (params) => (
       <Box sx={{ width: "100%", display: "flex", justifyContent: "center", alignItems: "center" }}>
-        <ProgramIcon src={params.value} alt="" />
+        <IconImage path={params.row.executionPath} />
       </Box>
     ),
   },

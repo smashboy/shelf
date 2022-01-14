@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { Card, CardActionArea, CardMedia, Grid, Backdrop, Typography } from "@mui/material";
 import { GameBaseModel } from "src/models/GameModel";
+import Image from "./Image";
 
 interface GameBaseCardProps {
   game: GameBaseModel;
@@ -32,10 +33,7 @@ export default function GameCard(props: GameBaseCardProps) {
         onMouseLeave={handleHideBackdrop}
       >
         <CardActionArea sx={{ height: "100%" }} component="div">
-          {game.cover?.data && (
-            <CardMedia component="img" height="295px" image={game.cover.data} alt={game.name} />
-          )}
-
+          <Image type="cover" imageId={game.cover} height="295px" sx={{ objectFit: "cover" }} />
           <Backdrop
             open={showBackdrop}
             sx={{ position: "absolute", zIndex: (theme) => theme.zIndex.drawer + 1 }}

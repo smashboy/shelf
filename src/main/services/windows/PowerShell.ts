@@ -1,3 +1,4 @@
+import { ipcMain } from "electron";
 import { CancelablePromise, cancelable } from "cancelable-promise";
 import Shell from "node-powershell";
 import electronLog from "electron-log";
@@ -13,6 +14,15 @@ export default class PowerShell {
   constructor() {
     this.log.transports.console.level = "error";
     this.log.transports.file.fileName = "powershell";
+
+    this.initListeners();
+  }
+
+  initListeners() {
+    ipcMain.handle("get-path-icon", async (_, path: string) => {
+      const icon = await this.getFileIcon(path);
+      return icon;
+    });
   }
 
   async runCommands(...commands: string[]) {
@@ -38,22 +48,7 @@ export default class PowerShell {
         });
 
         dataPromise = cancelable(
-          this.runCommands(
-            "Add-Type -AssemblyName System.Drawing",
-            `$Path = "${filePath}"`,
-            "$Icon = [System.Drawing.Icon]::ExtractAssociatedIcon($Path)",
-            "$MemoryStream = New-Object System.IO.MemoryStream",
-            "$Icon.save($MemoryStream)",
-            "$Bytes = $MemoryStream.ToArray()",
-            "$MemoryStream.Flush()",
-            "$MemoryStream.Dispose()",
-            "$Image = [convert]::ToBase64String($Bytes)",
-            `$VersionInfo = dir "${filePath}" | Select-Object VersionInfo`,
-            "$obj = New-Object -TypeName psobject",
-            "$obj | Add-Member -MemberType NoteProperty -Name image -Value $Image",
-            "$obj | Add-Member -MemberType NoteProperty -Name versionInfo -Value $VersionInfo",
-            "$obj | ConvertTo-JSON"
-          )
+          this.runCommands(`dir "${filePath}" | Select-Object VersionInfo | ConvertTo-JSON`)
         );
         const data = await dataPromise;
 
@@ -61,16 +56,12 @@ export default class PowerShell {
 
         const parsedData = JSON.parse(data);
 
-        const image = parsedData?.image ? `data:image/png;base64,${parsedData.image}` : null;
-
-        const versionInfo = parsedData?.versionInfo?.VersionInfo;
-
-        const name = (versionInfo?.ProductName ||
-          versionInfo?.InternalName ||
-          versionInfo?.FileDescription ||
+        const name = (parsedData?.ProductName ||
+          parsedData?.InternalName ||
+          parsedData?.FileDescription ||
           null) as string | null;
 
-        resolve({ icon: image, name });
+        resolve({ name });
       } catch (error) {
         // @ts-ignore
         this.log.error(`Get file info error ${error?.message}`);

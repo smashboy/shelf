@@ -29,20 +29,17 @@ export interface MediaModel {
   data: string;
 }
 
-export interface GameBaseCachedModel {
-  id: number;
-  name: string;
-  slug: string;
-  hash: string;
-}
-
 export interface GameModeModel {
   hash: string;
   name: string;
 }
 
-export interface GameBaseModel extends GameBaseCachedModel {
-  cover: MediaModel | null;
+export interface GameBaseModel {
+  id: number;
+  name: string;
+  slug: string;
+  hash: string;
+  cover: number | null;
 }
 
 export interface GameInfoBaseModel {
@@ -52,14 +49,14 @@ export interface GameInfoBaseModel {
   igdbTotalRatingCount: number;
   storyline: string;
   summary: string;
+  screenshots: number[];
+  artworks: number[];
   releaseDate: number;
 }
 
 export interface GameInfoCachedModel extends GameInfoBaseModel {
   websiteIds: number[];
   genreIds: number[];
-  screenshotIds: number[];
-  artworkIds: number[];
   companyIds: number[];
   themeIds: number[];
   modeIds: number[];
@@ -68,8 +65,6 @@ export interface GameInfoCachedModel extends GameInfoBaseModel {
 export interface GameInfoModel extends GameInfoBaseModel {
   websites: WebsiteModel[];
   genres: GenreModel[];
-  screenshots: MediaModel[];
-  artworks: MediaModel[];
   companies: CompanyModel[];
   themes: ThemeModel[];
   modes: GameModeModel[];

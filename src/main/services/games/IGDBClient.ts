@@ -1,16 +1,15 @@
 import igdb from "igdb-api-node";
-import fetch from "node-fetch";
 import electronLog from "electron-log";
+import { ipcMain } from "electron";
+import fetch from "node-fetch";
 import CacheStore from "../store/CacheStore";
 import type {
   GameBaseModel,
-  MediaModel,
   GameInfoBaseModel,
   GameInfoCachedModel,
   GameInfoModel,
   GenreModel,
   WebsiteModel,
-  GameBaseCachedModel,
   CompanyModel,
   ThemeModel,
   GameModeModel,
@@ -37,6 +36,44 @@ export default class IGDBClient {
 
     this.log.transports.console.level = "error";
     this.log.transports.file.fileName = "igdb-client";
+
+    this.initListeners();
+  }
+
+  private initListeners() {
+    ipcMain.handle("fetch-igdb-image", async (_, endpoint: string, referenceId: number) => {
+      const image = await this.loadImage(endpoint, referenceId);
+      return image;
+    });
+  }
+
+  private async loadImage(endpoint: string, referenceId: number) {
+    try {
+      this.log.log(`Loading image: ${endpoint} | ${referenceId}`);
+
+      const response = await this.client
+        .fields(["image_id"])
+        .where(`id = ${referenceId}`)
+        .request(`/${endpoint}`);
+
+      const imageData = response.data[0] || null;
+
+      if (!imageData) return null;
+
+      const fetchResponse = await fetch(
+        `https://images.igdb.com/igdb/image/upload/t_original/${imageData.image_id}.png`
+      );
+
+      const buffer = await fetchResponse.arrayBuffer();
+
+      const base64 = Buffer.from(buffer).toString("base64");
+
+      return `data:image/png;base64,${base64}`;
+    } catch (error) {
+      // @ts-ignore
+      this.log.error(`Get image error ${error?.message}`);
+      return null;
+    }
   }
 
   async getGameInfo(gameSlug: string, gameId: number) {
@@ -56,32 +93,27 @@ export default class IGDBClient {
           storyline: cachedInfo.data.storyline,
           summary: cachedInfo.data.summary,
           releaseDate: cachedInfo.data.releaseDate,
+          screenshots: cachedInfo.data.screenshots || [],
+          artworks: cachedInfo.data.artworks || [],
           websites: [],
           genres: [],
-          screenshots: [],
-          artworks: [],
           companies: [],
           themes: [],
           modes: [],
         };
 
         // TODO: add game id
-        const [genres, themes, websites, screenshots, artworks, companies, modes] =
-          await Promise.all([
-            this.loadGenres(cachedInfo.data.genreIds),
-            this.loadThemes(cachedInfo.data.themeIds),
-            this.loadWebsites(gameId, cachedInfo.data.websiteIds),
-            this.loadSreenshots(gameId, cachedInfo.data.screenshotIds),
-            this.loadArtworks(gameId, cachedInfo.data.artworkIds),
-            this.loadCompanies(gameId, cachedInfo.data.companyIds),
-            this.loadGameModes(cachedInfo.data.modeIds),
-          ]);
+        const [genres, themes, websites, companies, modes] = await Promise.all([
+          this.loadGenres(cachedInfo.data.genreIds),
+          this.loadThemes(cachedInfo.data.themeIds),
+          this.loadWebsites(gameId, cachedInfo.data.websiteIds),
+          this.loadCompanies(gameId, cachedInfo.data.companyIds),
+          this.loadGameModes(cachedInfo.data.modeIds),
+        ]);
 
         gameInfo.genres = genres;
         gameInfo.themes = themes;
         gameInfo.websites = websites;
-        gameInfo.screenshots = screenshots;
-        gameInfo.artworks = artworks;
         gameInfo.companies = companies;
         gameInfo.modes = modes;
 
@@ -124,14 +156,15 @@ export default class IGDBClient {
         summary: info.summary || "",
         storyline: info.storyline || "",
         releaseDate: info.first_release_date,
+        screenshots: info.screenshots || [],
+        artworks: info.artworks || [],
       };
 
       const cachedModel: GameInfoCachedModel = {
         ...base,
         genreIds: info.genres || [],
         websiteIds: info.websites || [],
-        screenshotIds: info.screenshots || [],
-        artworkIds: info.artworks || [],
+
         companyIds: info.involved_companies || [],
         themeIds: info.themes || [],
         modeIds: info.game_modes || [],
@@ -149,23 +182,18 @@ export default class IGDBClient {
       };
 
       // TODO: add game id
-      const [genres, themes, websites, screenshots, artworks, companies, modes] = await Promise.all(
-        [
-          this.loadGenres(cachedModel.genreIds),
-          this.loadThemes(cachedModel.themeIds),
-          this.loadWebsites(gameId, cachedModel.websiteIds),
-          this.loadSreenshots(gameId, cachedModel.screenshotIds),
-          this.loadArtworks(gameId, cachedModel.artworkIds),
-          this.loadCompanies(gameId, cachedModel.companyIds),
-          this.loadGameModes(cachedModel.modeIds),
-        ]
-      );
+      const [genres, themes, websites, companies, modes] = await Promise.all([
+        this.loadGenres(cachedModel.genreIds),
+        this.loadThemes(cachedModel.themeIds),
+        this.loadWebsites(gameId, cachedModel.websiteIds),
+
+        this.loadCompanies(gameId, cachedModel.companyIds),
+        this.loadGameModes(cachedModel.modeIds),
+      ]);
 
       gameInfo.genres = genres;
       gameInfo.themes = themes;
       gameInfo.websites = websites;
-      gameInfo.screenshots = screenshots;
-      gameInfo.artworks = artworks;
       gameInfo.companies = companies;
       gameInfo.modes = modes;
 
@@ -267,164 +295,6 @@ export default class IGDBClient {
     }
 
     return modes;
-  }
-
-  private async loadArtworks(gameId: number, artworksIds: number[]) {
-    this.log.log(`Loading artworks ${gameId} ${artworksIds.join(", ")}`);
-
-    const artworks: MediaModel[] = [];
-
-    for (const id of artworksIds) {
-      try {
-        const cachedArtwork = await this.cacheStore.load<MediaModel>("artworks", id);
-
-        if (cachedArtwork) {
-          artworks.push({ ...cachedArtwork.data, data: cachedArtwork.media.artwork });
-          this.log.log(`Artwork cache found ${gameId} ${id}`);
-        }
-      } catch (error) {
-        // @ts-ignore
-        this.log.error(`Load artwork cache error ${gameId} ${id} ${error?.message}`);
-        continue;
-      }
-    }
-
-    if (artworks.length > 0) return artworks;
-
-    try {
-      this.log.log(`Fetching new artworkds data ${gameId}`);
-
-      const response = await this.client
-        .fields(["checksum", "width", "height", "image_id"])
-        .where(`game = ${gameId}`)
-        .request("/artworks");
-
-      const artworksData = ((response.data || null) as Array<any>) || null;
-
-      if (!artworksData || artworksData.length === 0) return artworks;
-
-      for (const data of artworksData) {
-        try {
-          const imageResponse = await fetch(
-            `https://images.igdb.com/igdb/image/upload/t_original/${data.image_id}.png`
-          );
-
-          const buffer = await imageResponse.arrayBuffer();
-
-          const base64 = Buffer.from(buffer).toString("base64");
-
-          const artwork: MediaModel = {
-            width: data.width,
-            height: data.height,
-            hash: data.checksum,
-            data: `data:image/png;base64,${base64}`,
-          };
-
-          await this.cacheStore.save(
-            "artworks",
-            data.id,
-            {
-              width: artwork.width,
-              height: artwork.height,
-              hash: artwork.hash,
-            },
-            {
-              artwork: artwork.data,
-            }
-          );
-
-          artworks.push(artwork);
-        } catch (error) {
-          // @ts-ignore
-          this.log.error(`Load artwork error ${gameId} ${error?.message}`);
-          continue;
-        }
-      }
-    } catch (error) {
-      // @ts-ignore
-      this.log.error(`Fetch artworks error ${gameId} ${error?.message}`);
-    }
-
-    return artworks;
-  }
-
-  private async loadSreenshots(gameId: number, screenshotsIds: number[]) {
-    this.log.log(`Loading screenshots ${gameId} ${screenshotsIds.join(", ")}`);
-
-    const screenshots: MediaModel[] = [];
-
-    for (const id of screenshotsIds) {
-      try {
-        const cachedScreenshot = await this.cacheStore.load<MediaModel>("screenshots", id);
-
-        if (cachedScreenshot) {
-          screenshots.push({ ...cachedScreenshot.data, data: cachedScreenshot.media.screenshot });
-          this.log.log(`Screenshot cache found ${gameId} ${id}`);
-        }
-      } catch (error) {
-        // @ts-ignore
-        this.log.error(`Load screenshot cache error ${gameId} ${id} ${error?.message}`);
-        continue;
-      }
-    }
-
-    if (screenshots.length > 0) return screenshots;
-
-    try {
-      this.log.log(`Fetching new screenshots data ${gameId}`);
-
-      const response = await this.client
-        .fields(["checksum", "width", "height", "image_id"])
-        .where(`game = ${gameId}`)
-        .request("/screenshots");
-
-      const screenshotsData = ((response.data || null) as Array<any>) || null;
-
-      if (!screenshotsData || screenshotsData.length === 0) return screenshots;
-
-      for (const data of screenshotsData) {
-        try {
-          const imageResponse = await fetch(
-            `https://images.igdb.com/igdb/image/upload/t_original/${data.image_id}.png`
-          );
-
-          const buffer = await imageResponse.arrayBuffer();
-
-          const base64 = Buffer.from(buffer).toString("base64");
-
-          const screenshot: MediaModel = {
-            width: data.width,
-            height: data.height,
-            hash: data.checksum,
-            data: `data:image/png;base64,${base64}`,
-          };
-
-          await this.cacheStore.save(
-            "screenshots",
-            data.id,
-            {
-              width: screenshot.width,
-              height: screenshot.height,
-              hash: screenshot.hash,
-            },
-            {
-              screenshot: screenshot.data,
-            }
-          );
-
-          screenshots.push(screenshot);
-        } catch (error) {
-          // @ts-ignore
-          this.log.error(`Load screenshot error ${gameId} ${error?.message}`);
-          continue;
-        }
-      }
-    } catch (error) {
-      // @ts-ignore
-      this.log.error(`Fetch screenshots error ${gameId} ${error?.message}`);
-    }
-
-    return screenshots;
   }
 
   private async loadWebsites(gameId: number, websitesIds: number[]) {
@@ -601,62 +471,6 @@ export default class IGDBClient {
     return genres;
   }
 
-  private async loadCover(gameId: number): Promise<MediaModel | null> {
-    try {
-      this.log.log(`Loading game cover ${gameId}`);
-
-      const cachedCover = await this.cacheStore.load<MediaModel>("covers", gameId);
-
-      if (cachedCover) {
-        this.log.log(`Game cover cache found ${gameId}`);
-        return { ...cachedCover.data, data: cachedCover.media.cover };
-      }
-
-      const coverRespose = await this.client
-        .fields(["checksum", "width", "height", "image_id"])
-        .where(`game = ${gameId}`)
-        .request("/covers");
-
-      const coverData = coverRespose.data[0] || null;
-
-      if (!coverData) return null;
-
-      const imageUrl = `https://images.igdb.com/igdb/image/upload/t_original/${coverData.image_id}.png`;
-
-      const imageResponse = await fetch(imageUrl);
-
-      const buffer = await imageResponse.arrayBuffer();
-
-      const base64 = Buffer.from(buffer).toString("base64");
-
-      const cover: MediaModel = {
-        width: coverData.width,
-        height: coverData.height,
-        hash: coverData.checksum,
-        data: `data:image/png;base64,${base64}`,
-      };
-
-      await this.cacheStore.save(
-        "covers",
-        gameId,
-        {
-          width: cover.width,
-          height: cover.height,
-          hash: cover.hash,
-        },
-        {
-          cover: cover.data,
-        }
-      );
-
-      return cover;
-    } catch (error) {
-      // @ts-ignore
-      this.log.error(`Load game cover error ${gameId} ${error?.message}`);
-      return null;
-    }
-  }
-
   async textSearchGames(query: string) {
     this.log.log(`Searching games ${query}`);
 
@@ -681,13 +495,10 @@ export default class IGDBClient {
             name: game.name,
             slug: `custom-${game.slug}`,
             hash: game.checksum,
+            cover: game.cover ?? null,
           };
 
-          const cover = await this.loadCover(baseModel.id);
-
-          const loadedModel = { ...baseModel, cover };
-
-          games.push(loadedModel);
+          games.push(baseModel);
 
           await this.cacheStore.save("base", baseModel.slug, baseModel);
         } catch (error) {
@@ -726,14 +537,9 @@ export default class IGDBClient {
             if (cachedGame) {
               this.log.info(`Cached game found ${slug}`);
 
-              const data = cachedGame.data as GameBaseCachedModel;
+              const data = cachedGame.data as GameBaseModel;
 
-              const cover = await this.loadCover(data.id);
-
-              loadedGames.push({
-                ...data,
-                cover,
-              });
+              loadedGames.push(data);
             }
           }
 
@@ -761,13 +567,10 @@ export default class IGDBClient {
               name: game.name,
               slug: `custom-${game.slug}`,
               hash: game.checksum,
+              cover: game.cover ?? null,
             };
 
-            const cover = await this.loadCover(baseModel.id);
-
-            const loadedModel = { ...baseModel, cover };
-
-            loadedGames.push(loadedModel);
+            loadedGames.push(baseModel);
 
             await this.cacheStore.save("base", baseModel.slug, baseModel);
           } catch (error) {

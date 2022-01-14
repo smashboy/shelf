@@ -1,5 +1,6 @@
 import { useScanner } from "@/storage/ScannerStore";
 import Alert from "@/ui/components/Alert";
+import IconImage from "@/ui/components/IconImage";
 import { styled, Box, Grid } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 
@@ -20,7 +21,7 @@ const columns: GridColDef[] = [
     sortable: false,
     renderCell: (params) => (
       <Box sx={{ width: "100%", display: "flex", justifyContent: "center", alignItems: "center" }}>
-        <ProgramIcon src={params.value} alt="" />
+        <IconImage path={params.row.executionPath} />
       </Box>
     ),
   },
@@ -40,6 +41,8 @@ export default function ScannedProgramsList() {
       <Grid item xs={12}>
         <Box sx={{ height: "50vh" }}>
           <DataGrid
+            // Virtualization not properly triggers cell mount
+            disableVirtualization
             columns={columns}
             loading={isLoading}
             rows={filter ? filteredRows : rows}
