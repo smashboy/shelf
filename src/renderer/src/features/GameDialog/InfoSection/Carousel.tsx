@@ -163,8 +163,8 @@ export default function Carousel() {
             // @ts-ignore
             type={image.key}
             imageId={image.id}
-            sx={{ height: "100%", borderRadius: 1, maxHeight: "75vh" }}
-            containerProps={{ sx: { width: "75%", backgroundColor: "transparent" } }}
+            sx={{ borderRadius: 1, maxHeight: "75vh" }}
+            containerProps={{ sx: { backgroundColor: "transparent" } }}
           />
         )}
       </Backdrop>
