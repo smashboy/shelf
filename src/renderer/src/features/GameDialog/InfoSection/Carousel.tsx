@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import MUICarousel from "react-material-ui-carousel";
 import { makeStyles } from "@mui/styles";
-import { Backdrop, Card, CardActionArea, CardMedia, Grid } from "@mui/material";
+import { Backdrop, Card, CardActionArea, Grid } from "@mui/material";
 import { useGame } from "@/storage/GameStore";
 import { Box } from "@mui/system";
 import Image from "@/ui/components/Image";
@@ -12,8 +12,13 @@ const useStyles = makeStyles({
   },
 });
 
+interface CarouselImage {
+  key: string;
+  id: number;
+}
+
 interface PreviewItemProps {
-  image: string;
+  image: CarouselImage;
   index: number;
   activeSliderIndex: number;
   onClick: (index: number) => void;
@@ -38,10 +43,12 @@ function PreviewItem(props: PreviewItemProps) {
       }}
     >
       <CardActionArea>
-        <CardMedia
-          component="img"
-          image={image}
-          sx={{ width: "120px", minHeight: "70px", maxHeight: "70px" }}
+        <Image
+          // @ts-ignore
+          type={image.key}
+          imageId={image.id}
+          containerProps={{ sx: { height: "70px", width: "120px" } }}
+          sx={{ width: "120px", height: "70px", objectFit: "cover" }}
         />
       </CardActionArea>
     </Card>
@@ -55,7 +62,7 @@ export default function Carousel() {
 
   const { info } = useGame();
 
-  const [image, setImage] = useState<string | null>(null);
+  const [image, setImage] = useState<CarouselImage | null>(null);
 
   const previewContainerRef = useRef<HTMLDivElement>(null);
 
@@ -66,7 +73,7 @@ export default function Carousel() {
     });
   }, [activeSlider]);
 
-  const handleShowImage = useCallback((image: string) => setImage(image), []);
+  const handleShowImage = useCallback((image: CarouselImage) => setImage(image), []);
   const handleHideImage = useCallback(() => setImage(null), []);
   const handleClickPreview = useCallback((newSlide: number) => setActiveSlide(newSlide), []);
   const handleActiveSlider = useCallback((newSlide: number | undefined) => {
@@ -83,7 +90,7 @@ export default function Carousel() {
 
   return (
     <>
-      <Grid container rowSpacing={2}>
+      <Grid container>
         <Grid container item xs={12} justifyContent="center">
           <MUICarousel
             className={classes.carouselRoot}
@@ -108,7 +115,7 @@ export default function Carousel() {
                 }}
               >
                 <Image
-                  //  onClick={() => handleShowImage(media.data)}
+                  onClick={() => handleShowImage(image)}
                   // @ts-ignore
                   type={image.key}
                   imageId={image.id}
@@ -117,7 +124,7 @@ export default function Carousel() {
                     display: "flex",
                     justifyContent: "center",
                     alignItems: "center",
-                    minHeight: "500px",
+                    height: "450px",
                     borderRadius: "4px",
                   }}
                   sx={{
@@ -129,29 +136,38 @@ export default function Carousel() {
             ))}
           </MUICarousel>
         </Grid>
-        {/* <Grid container item xs={12} justifyContent="center">
+        <Grid container item xs={12} justifyContent="center">
           <Box
             ref={previewContainerRef}
             sx={{ overflowX: "auto", width: "65%", whiteSpace: "nowrap" }}
           >
             {images.map((image, index) => (
               <PreviewItem
-                key={image.hash}
-                image={image.data}
+                key={`preview-${image.key}-${image.id}`}
+                image={image}
                 index={index}
                 activeSliderIndex={activeSlider}
                 onClick={handleClickPreview}
               />
             ))}
           </Box>
-        </Grid> */}
+        </Grid>
       </Grid>
       <Backdrop
         open={Boolean(image)}
         onClick={handleHideImage}
         sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
       >
-        {image && <img src={image} width="75%" style={{ borderRadius: "4px" }} />}
+        {image && (
+          <Image
+            // @ts-ignore
+            type={image.key}
+            imageId={image.id}
+            sx={{ height: "100%" }}
+            containerProps={{ sx: { width: "75%", backgroundColor: "transparent" } }}
+            sx={{ borderRadius: 1 }}
+          />
+        )}
       </Backdrop>
     </>
   );

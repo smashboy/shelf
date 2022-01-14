@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
-import { Box, BoxProps } from "@mui/material";
+import { Box, BoxProps, Skeleton } from "@mui/material";
 import * as mediaCacheApi from "@/utils/mediaCache";
 import BlobWorker from "@/workers/blob2base64?worker";
 import { b64toBlob, ImageState } from "./IconImage";
 
 interface ImageProps extends Omit<BoxProps<"img">, "component" | "src"> {
   containerProps?: BoxProps<"div">;
-  height: number | string;
   type: "cover" | "screenshot" | "artwork";
   imageId: number | string | null;
 }
@@ -77,10 +76,11 @@ export default function Image(props: ImageProps) {
   }, []);
 
   return (
-    <Box {...containerProps} height={height}>
-      {image.data && (
-        <Box {...otherProps} src={image.data} component="img" width="100%" height="100%" />
+    <Box {...containerProps} bgcolor={(theme) => theme.palette.background.default}>
+      {image.loading && (
+        <Skeleton width="100%" height="100%" variant="rectangular" sx={{ borderRadius: 1 }} />
       )}
+      {image.data && <Box {...otherProps} src={image.data} component="img" width="100%" />}
     </Box>
   );
 }
