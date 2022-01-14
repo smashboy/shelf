@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Box, BoxProps } from "@mui/material";
 import * as mediaCacheApi from "@/utils/mediaCache";
 import BlobWorker from "@/workers/blob2base64?worker";
-import BufferWorker from "@/workers/buffer2base64?worker";
 import { b64toBlob, ImageState } from "./IconImage";
 
 interface ImageProps extends Omit<BoxProps<"img">, "component" | "src"> {
