@@ -74,10 +74,6 @@ export const GameStoreProvider = ({ children }: { children: React.ReactNode }) =
   const [isLoadingGame, setIsLoadingGame] = useState(false);
   const [images, setImages] = useState<ImageState[]>([]);
 
-  useEffect(() => {
-    console.log(images);
-  }, [images]);
-
   const handleLoadGame = useCallback(async (baseGame: UserGameModelFull) => {
     try {
       const { invoke } = window.bridge.ipcRenderer;
