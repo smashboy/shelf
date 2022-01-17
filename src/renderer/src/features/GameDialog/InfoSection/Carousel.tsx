@@ -4,7 +4,7 @@ import { makeStyles } from "@mui/styles";
 import { Backdrop, Card, CardActionArea, Grid } from "@mui/material";
 import { useGame } from "@/storage/GameStore";
 import { Box } from "@mui/system";
-import Image from "@/ui/components/Image";
+import StatelessImage from "@/ui/components/StatelessImage";
 
 const useStyles = makeStyles({
   carouselRoot: {
@@ -12,26 +12,18 @@ const useStyles = makeStyles({
   },
 });
 
-interface CarouselImage {
-  key: string;
-  id: number;
-}
-
 interface PreviewItemProps {
-  image: CarouselImage;
+  image: string;
   index: number;
+  loading: boolean;
   activeSliderIndex: number;
   onClick: (index: number) => void;
 }
 
 function PreviewItem(props: PreviewItemProps) {
-  const { image, index, activeSliderIndex, onClick } = props;
+  const { image, loading, index, activeSliderIndex, onClick } = props;
 
   const isActive = useMemo(() => index === activeSliderIndex, [index, activeSliderIndex]);
-
-  // useEffect(() => {
-  //   if (index === activeSliderIndex) cardRef.current?.scrollIntoView(false);
-  // }, [index, activeSliderIndex]);
 
   return (
     <Card
@@ -43,10 +35,9 @@ function PreviewItem(props: PreviewItemProps) {
       }}
     >
       <CardActionArea>
-        <Image
-          // @ts-ignore
-          type={image.key}
-          imageId={image.id}
+        <StatelessImage
+          loading={loading}
+          image={image}
           containerProps={{ sx: { height: "70px", width: "120px" } }}
           sx={{ width: "120px", height: "70px", objectFit: "cover" }}
         />
@@ -60,9 +51,9 @@ export default function Carousel() {
 
   const [activeSlider, setActiveSlide] = useState(0);
 
-  const { info } = useGame();
+  const { info, images } = useGame();
 
-  const [image, setImage] = useState<CarouselImage | null>(null);
+  const [image, setImage] = useState<string | null>(null);
 
   const previewContainerRef = useRef<HTMLDivElement>(null);
 
@@ -73,20 +64,12 @@ export default function Carousel() {
     });
   }, [activeSlider]);
 
-  const handleShowImage = useCallback((image: CarouselImage) => setImage(image), []);
+  const handleShowImage = useCallback((image: string) => setImage(image), []);
   const handleHideImage = useCallback(() => setImage(null), []);
   const handleClickPreview = useCallback((newSlide: number) => setActiveSlide(newSlide), []);
   const handleActiveSlider = useCallback((newSlide: number | undefined) => {
     if (newSlide !== undefined) setActiveSlide(newSlide);
   }, []);
-
-  const images = useMemo(
-    () => [
-      ...info!.screenshots.map((id) => ({ key: "screenshot", id })),
-      ...info!.artworks.map((id) => ({ key: "artwork", id })),
-    ],
-    [info?.artworks, info?.screenshots]
-  );
 
   return (
     <>
@@ -105,20 +88,19 @@ export default function Carousel() {
               },
             }}
           >
-            {images.map((image) => (
+            {images.map((image, index) => (
               <Box
-                key={`${image.key}-${image.id}`}
+                key={`main-${index}`}
                 sx={{
                   display: "flex",
                   justifyContent: "center",
                   alignItems: "center",
                 }}
               >
-                <Image
-                  onClick={() => handleShowImage(image)}
-                  // @ts-ignore
-                  type={image.key}
-                  imageId={image.id}
+                <StatelessImage
+                  onClick={() => handleShowImage(image.data!)}
+                  loading={image.loading}
+                  image={image.data}
                   containerProps={{
                     width: "80%",
                     display: "flex",
@@ -143,8 +125,9 @@ export default function Carousel() {
           >
             {images.map((image, index) => (
               <PreviewItem
-                key={`preview-${image.key}-${image.id}`}
-                image={image}
+                key={`preview-${index}`}
+                image={image.data!}
+                loading={image.loading}
                 index={index}
                 activeSliderIndex={activeSlider}
                 onClick={handleClickPreview}
@@ -159,10 +142,9 @@ export default function Carousel() {
         sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
       >
         {image && (
-          <Image
-            // @ts-ignore
-            type={image.key}
-            imageId={image.id}
+          <StatelessImage
+            loading={false}
+            image={image}
             sx={{ borderRadius: 1, maxHeight: "75vh" }}
             containerProps={{ sx: { backgroundColor: "transparent" } }}
           />
