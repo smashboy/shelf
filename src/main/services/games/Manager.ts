@@ -55,7 +55,7 @@ export default class GamesManager {
     });
   }
 
-  async launchGame(gamePath: string) {
+  private async launchGame(gamePath: string) {
     return new Promise((resolve, reject) => {
       this.log.log(`Launching game ${gamePath}`);
 
@@ -107,7 +107,7 @@ export default class GamesManager {
     });
   }
 
-  async addGames(games: AddGamesProps) {
+  private async addGames(games: AddGamesProps) {
     try {
       const promises = games.map((game) =>
         this.cacheStore.save("user-games", crypto.randomUUID(), game)
@@ -119,7 +119,7 @@ export default class GamesManager {
     }
   }
 
-  async getGameInfo(props: GetGameInfo) {
+  private async getGameInfo(props: GetGameInfo) {
     try {
       const info = await this.igdb.getGameInfo(props.gameSlug, props.gameId);
       return info;
@@ -128,7 +128,7 @@ export default class GamesManager {
     }
   }
 
-  async getGamesList() {
+  private async getGamesList() {
     const games: UserGameModelFull[] = [];
 
     try {

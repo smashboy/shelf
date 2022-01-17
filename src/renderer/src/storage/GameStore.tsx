@@ -104,6 +104,8 @@ export const GameStoreProvider = ({ children }: { children: React.ReactNode }) =
       ...info.artworks.map((id) => ({ key: "artwork", id })),
     ];
 
+    if (imagesIds.length === 0) return;
+
     const loadingPlaceholders = new Array(imagesIds.length).fill({ loading: true, data: null });
 
     setImages(loadingPlaceholders);

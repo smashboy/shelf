@@ -71,21 +71,23 @@ export default class CacheStore extends BaseStore {
   }
 
   async loadBucket<T>(bucket: string) {
-    let cache: Record<string, CacheModel> = {};
+    // let cache: Record<string, CacheModel> = {};
 
-    const memoryCache = this.memoryCache[bucket] || null;
-    let memoryCacheExist = false;
+    // const memoryCache = this.memoryCache[bucket] || null;
+    // let memoryCacheExist = false;
 
-    if (memoryCache) {
-      cache = memoryCache;
-      memoryCacheExist = true;
-    } else {
-      cache = this.get<Record<string, CacheModel>>(bucket);
-    }
+    // if (memoryCache) {
+    //   cache = memoryCache;
+    //   memoryCacheExist = true;
+    // } else {
+    //   cache = this.get<Record<string, CacheModel>>(bucket);
+    // }
 
-    if (!cache) return null;
+    // if (!cache) return null;
 
-    if (!memoryCacheExist) this._setMemoryBucketCache(bucket, cache);
+    // if (!memoryCacheExist) this._setMemoryBucketCache(bucket, cache);
+
+    const cache = this.get<Record<string, CacheModel>>(bucket);
 
     const data: Record<string, CacheModel<T>> = {};
 

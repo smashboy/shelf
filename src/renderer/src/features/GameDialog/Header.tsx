@@ -51,7 +51,6 @@ export default function Header() {
       >
         {game?.name}
       </DialogTitle>
-
       <Grid
         container
         spacing={2}
