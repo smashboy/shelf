@@ -1,10 +1,9 @@
 import { b64toBlob, ImageState } from "@/ui/components/IconImage";
 import { timeout } from "@/utils";
 import { useSnackbar } from "notistack";
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useState } from "react";
 import type { GameInfoModel, UserGameModelFull } from "src/models/GameModel";
 import * as mediaCacheApi from "@/utils/mediaCache";
-import BlobWorker from "@/workers/blob2base64?worker";
 import { useGamesList } from "./GamesListStore";
 
 interface GameStore {

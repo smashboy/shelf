@@ -1,4 +1,5 @@
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useDebounce } from "use-debounce";
 import type { UserGameModelFull } from "src/models/GameModel";
 import { useView, View } from "./ViewStore";
 
@@ -6,6 +7,8 @@ interface GamesListStore {
   games: UserGameModelFull[];
   loading: boolean;
   launchedGames: string[];
+  query: string;
+  setQuery: (event: React.ChangeEvent<HTMLInputElement>) => void;
   addLaunchedGame: (gamePath: string) => void;
 }
 
@@ -16,7 +19,17 @@ export const GamesListStoreProvider = ({ children }: { children: React.ReactNode
 
   const [games, setGames] = useState<UserGameModelFull[]>([]);
   const [launchedGames, setLaunchedGames] = useState<string[]>([]);
+  const [query, setQuery] = useState("");
+  const [debouncedQuery] = useDebounce(query, 500);
   const [loading, setLoading] = useState(false);
+
+  const filteredGames = useMemo(
+    () =>
+      debouncedQuery
+        ? games.filter((game) => game.name.toLowerCase().indexOf(debouncedQuery.toLowerCase()) > -1)
+        : games,
+    [debouncedQuery, games]
+  );
 
   useEffect(() => {
     if (view === View.MAIN) handleLoadGames();
@@ -58,9 +71,21 @@ export const GamesListStoreProvider = ({ children }: { children: React.ReactNode
     []
   );
 
+  const handleQuery = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => setQuery(event.currentTarget.value),
+    []
+  );
+
   return (
     <GamesListStoreContext.Provider
-      value={{ games, loading, addLaunchedGame: handleAddLaunchedGame, launchedGames }}
+      value={{
+        games: filteredGames,
+        loading,
+        addLaunchedGame: handleAddLaunchedGame,
+        launchedGames,
+        query,
+        setQuery: handleQuery,
+      }}
     >
       {children}
     </GamesListStoreContext.Provider>
