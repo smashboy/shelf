@@ -164,7 +164,6 @@ export default class IGDBClient {
         ...base,
         genreIds: info.genres || [],
         websiteIds: info.websites || [],
-
         companyIds: info.involved_companies || [],
         themeIds: info.themes || [],
         modeIds: info.game_modes || [],
@@ -174,8 +173,6 @@ export default class IGDBClient {
         ...base,
         websites: [],
         genres: [],
-        screenshots: [],
-        artworks: [],
         companies: [],
         themes: [],
         modes: [],
