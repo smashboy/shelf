@@ -5,6 +5,7 @@ import { createContext, useCallback, useContext, useState } from "react";
 import type { GameInfoModel, UserGameModelFull } from "src/models/GameModel";
 import * as mediaCacheApi from "@/utils/mediaCache";
 import { useGamesList } from "./GamesListStore";
+import rateLimit from "@/utils/rateLimit";
 
 interface GameStore {
   game: UserGameModelFull | null;
@@ -20,40 +21,80 @@ interface GameStore {
 
 const GameStoreContext = createContext<GameStore | null>(null);
 
-export async function fetchImage(type: string, imageId: number | string): Promise<string | null> {
+async function fetchCachedImage(
+  cacheBucket: mediaCacheApi.CacheName,
+  cacheId: string
+): Promise<string | null> {
+  const cachedImageBlob = await mediaCacheApi.fetch(cacheBucket, cacheId);
+
+  if (cachedImageBlob) return URL.createObjectURL(cachedImageBlob);
+
+  return cachedImageBlob;
+}
+
+async function fetchNewImage(
+  imageId: string | number,
+  cacheBucket: mediaCacheApi.CacheName,
+  cacheId: string
+) {
+  const { invoke } = window.bridge.ipcRenderer;
+
+  const image = await invoke("fetch-igdb-image", cacheBucket, imageId);
+
+  if (image) {
+    const newImageBlob = b64toBlob(image.replace("data:image/png;base64,", ""), "image/png");
+    await mediaCacheApi.save(cacheBucket as mediaCacheApi.CacheName, cacheId, newImageBlob);
+
+    return URL.createObjectURL(newImageBlob);
+  }
+
+  return null;
+}
+
+async function fetchNewImageRateLimitWrapper(
+  imageId: string | number,
+  cacheBucket: mediaCacheApi.CacheName,
+  cacheId: string,
+  onDone: (image: string | null) => void
+) {
+  console.log("RATE LIMITED FETCH");
+  const image = await fetchNewImage(imageId, cacheBucket, cacheId);
+  onDone(image);
+}
+
+const _RATE_LIMITED_fetchNewImage = rateLimit(fetchNewImageRateLimitWrapper, 500);
+
+export function fetchImage(
+  type: string,
+  imageId: number | string,
+  rateLimited?: boolean
+): Promise<string | null> {
   return new Promise(async (resolve) => {
     try {
-      if (!imageId) return;
-
-      const { invoke } = window.bridge.ipcRenderer;
+      if (!imageId) return resolve(null);
 
       const cacheBucket = `${type}s`;
       const cacheId = `${type}-${imageId}`;
 
-      const cachedImageBlob = await mediaCacheApi.fetch(
+      const cachedImage = await fetchCachedImage(cacheBucket as mediaCacheApi.CacheName, cacheId);
+
+      if (cachedImage) return resolve(cachedImage);
+
+      if (rateLimited)
+        return _RATE_LIMITED_fetchNewImage(
+          imageId,
+          cacheBucket as mediaCacheApi.CacheName,
+          cacheId,
+          (image) => resolve(image)
+        );
+
+      const newImage = await fetchNewImage(
+        imageId,
         cacheBucket as mediaCacheApi.CacheName,
         cacheId
       );
 
-      if (cachedImageBlob) {
-        resolve(URL.createObjectURL(cachedImageBlob));
-
-        return;
-      }
-
-      const image = await invoke("fetch-igdb-image", cacheBucket, imageId);
-
-      if (image) {
-        const newImageBlob = b64toBlob(image.replace("data:image/png;base64,", ""), "image/png");
-
-        resolve(URL.createObjectURL(newImageBlob));
-
-        await mediaCacheApi.save(cacheBucket as mediaCacheApi.CacheName, cacheId, newImageBlob);
-
-        return;
-      }
-
-      resolve(null);
+      resolve(newImage);
     } catch (error) {
       console.warn(error);
       resolve(null);
@@ -61,7 +102,7 @@ export async function fetchImage(type: string, imageId: number | string): Promis
   });
 }
 
-export const GameStoreProvider = ({ children }: { children: React.ReactNode }) => {
+export function GameStoreProvider({ children }: { children: React.ReactNode }) {
   const { enqueueSnackbar } = useSnackbar();
 
   const { addLaunchedGame } = useGamesList();
@@ -109,15 +150,25 @@ export const GameStoreProvider = ({ children }: { children: React.ReactNode }) =
 
     setImages(loadingPlaceholders);
 
-    const promises = imagesIds.map((image) => fetchImage(image.key, image.id));
+    const loadedImages: string[] = [];
 
-    const loadedImages = (await Promise.all(promises)).filter((image) => image);
+    for (const index in imagesIds) {
+      const imageMeta = imagesIds[index];
 
-    if (loadedImages.length > 0) {
-      setHeaderImage(loadedImages[Math.floor(Math.random() * loadedImages.length)]);
+      const image = await fetchImage(imageMeta.key, imageMeta.id, true);
 
-      setImages(loadedImages.map((image) => ({ data: image, loading: false })));
+      if (image) {
+        loadedImages.push(image);
+        setImages((prevState) => {
+          const updatedState = [...prevState];
+          updatedState[index] = { data: image, loading: false };
+          return updatedState;
+        });
+      }
     }
+
+    if (loadedImages.length > 0)
+      setHeaderImage(loadedImages[Math.floor(Math.random() * loadedImages.length)]);
   }, []);
 
   const handleCloseGame = useCallback(() => {
@@ -165,7 +216,7 @@ export const GameStoreProvider = ({ children }: { children: React.ReactNode }) =
       {children}
     </GameStoreContext.Provider>
   );
-};
+}
 
 export const useGame = () => {
   const store = useContext(GameStoreContext);

@@ -183,7 +183,6 @@ export default class IGDBClient {
         this.loadGenres(cachedModel.genreIds),
         this.loadThemes(cachedModel.themeIds),
         this.loadWebsites(gameId, cachedModel.websiteIds),
-
         this.loadCompanies(gameId, cachedModel.companyIds),
         this.loadGameModes(cachedModel.modeIds),
       ]);
