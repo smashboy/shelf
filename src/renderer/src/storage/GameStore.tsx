@@ -57,7 +57,6 @@ async function fetchNewImageRateLimitWrapper(
   cacheId: string,
   onDone: (image: string | null) => void
 ) {
-  console.log("RATE LIMITED FETCH");
   const image = await fetchNewImage(imageId, cacheBucket, cacheId);
   onDone(image);
 }
@@ -218,10 +217,10 @@ export function GameStoreProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export const useGame = () => {
+export function useGame() {
   const store = useContext(GameStoreContext);
 
   if (!store) throw new Error("useGame must be used within GameStoreProvider");
 
   return store;
-};
+}
