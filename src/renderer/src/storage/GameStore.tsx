@@ -62,7 +62,7 @@ async function fetchNewImageRateLimitWrapper(
   onDone(image);
 }
 
-const _RATE_LIMITED_fetchNewImage = rateLimit(fetchNewImageRateLimitWrapper, 500);
+const _RATE_LIMITED_fetchNewImage = rateLimit(fetchNewImageRateLimitWrapper, 300);
 
 export function fetchImage(
   type: string,
