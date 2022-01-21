@@ -1,5 +1,4 @@
 import { b64toBlob, ImageState } from "@/ui/components/IconImage";
-import { timeout } from "@/utils";
 import { useSnackbar } from "notistack";
 import { createContext, useCallback, useContext, useState } from "react";
 import type { GameInfoModel, UserGameModelFull } from "src/models/GameModel";
@@ -42,7 +41,7 @@ async function fetchNewImage(
   const image = await invoke("fetch-igdb-image", cacheBucket, imageId);
 
   if (image) {
-    const newImageBlob = b64toBlob(image.replace("data:image/png;base64,", ""), "image/png");
+    const newImageBlob = b64toBlob(image.replace("data:image/webp;base64,", ""), "image/webp");
     await mediaCacheApi.save(cacheBucket as mediaCacheApi.CacheName, cacheId, newImageBlob);
 
     return URL.createObjectURL(newImageBlob);
@@ -119,8 +118,6 @@ export function GameStoreProvider({ children }: { children: React.ReactNode }) {
 
       setGame(baseGame);
       setLoading(true);
-
-      await timeout(500);
 
       const info = (await invoke("get-game-info", {
         gameSlug: baseGame.slug,

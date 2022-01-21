@@ -1,4 +1,8 @@
-import { ButtonProps as MUIButtonProps, Button as MUIButton } from "@mui/material";
+import { ButtonProps as MUIButtonProps, Button as MUIButton, styled } from "@mui/material";
+
+const ButtonStyled = styled(MUIButton)(() => ({
+  borderRadius: 3,
+}));
 
 interface ButtonProps
   extends Omit<
@@ -8,8 +12,8 @@ interface ButtonProps
 
 export default function Button({ children, ...props }: ButtonProps) {
   return (
-    <MUIButton disableElevation disableRipple disableTouchRipple disableFocusRipple {...props}>
+    <ButtonStyled disableElevation disableRipple disableTouchRipple disableFocusRipple {...props}>
       {children}
-    </MUIButton>
+    </ButtonStyled>
   );
 }

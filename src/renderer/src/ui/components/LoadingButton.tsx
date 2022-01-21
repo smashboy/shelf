@@ -1,7 +1,12 @@
+import { styled } from "@mui/material";
 import {
   LoadingButtonProps as MUILoadingButtonProps,
   LoadingButton as MUILoadingButton,
 } from "@mui/lab";
+
+const StyledLoadingButton = styled(MUILoadingButton)(() => ({
+  borderRadius: 3,
+}));
 
 interface ButtonProps
   extends Omit<
@@ -11,7 +16,7 @@ interface ButtonProps
 
 export default function LoadingButton({ children, ...props }: ButtonProps) {
   return (
-    <MUILoadingButton
+    <StyledLoadingButton
       disableElevation
       disableRipple
       disableTouchRipple
@@ -19,6 +24,6 @@ export default function LoadingButton({ children, ...props }: ButtonProps) {
       {...props}
     >
       {children}
-    </MUILoadingButton>
+    </StyledLoadingButton>
   );
 }

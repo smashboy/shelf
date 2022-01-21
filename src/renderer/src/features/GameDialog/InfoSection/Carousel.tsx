@@ -51,7 +51,7 @@ export default function Carousel() {
 
   const [activeSlider, setActiveSlide] = useState(0);
 
-  const { info, images } = useGame();
+  const { images } = useGame();
 
   const [image, setImage] = useState<string | null>(null);
 

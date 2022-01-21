@@ -61,14 +61,14 @@ export default class IGDBClient {
       if (!imageData) return null;
 
       const fetchResponse = await fetch(
-        `https://images.igdb.com/igdb/image/upload/t_original/${imageData.image_id}.png`
+        `https://images.igdb.com/igdb/image/upload/t_original/${imageData.image_id}.webp`
       );
 
       const buffer = await fetchResponse.arrayBuffer();
 
       const base64 = Buffer.from(buffer).toString("base64");
 
-      return `data:image/png;base64,${base64}`;
+      return `data:image/webp;base64,${base64}`;
     } catch (error) {
       // @ts-ignore
       this.log.error(`Get image error ${error?.message}`);

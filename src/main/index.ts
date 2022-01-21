@@ -35,6 +35,11 @@ async function mainWin() {
     autoHideMenuBar: true,
     minWidth: 1280,
     minHeight: 600,
+    titleBarStyle: "hidden",
+    titleBarOverlay: {
+      color: "#0d0d0d",
+      symbolColor: "#ffffff",
+    },
     webPreferences: {
       preload: join(__dirname, "../preload/index.cjs"),
     },
