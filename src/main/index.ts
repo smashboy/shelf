@@ -1,6 +1,6 @@
 import os from "os";
 import { join } from "path";
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, shell as electronShell } from "electron";
 import ConfigStore from "./services/store/ConfigStore";
 import GamesScanner from "./services/games/Scanner";
 import PowerShell from "./services/windows/PowerShell";
@@ -65,6 +65,12 @@ async function mainWin() {
   // Test active push message to Renderer-process.
   win.webContents.on("did-finish-load", () => {
     win?.webContents.send("main-process-message", new Date().toLocaleString());
+  });
+
+  win.webContents.setWindowOpenHandler((options) => {
+    electronShell.openExternal(options.url);
+
+    return { action: "deny" };
   });
 }
 

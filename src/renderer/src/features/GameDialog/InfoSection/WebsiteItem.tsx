@@ -45,6 +45,11 @@ export default function WebsiteItem(props: WebsiteModel) {
       <IconButton
         color="secondary"
         size="large"
+        // @ts-ignore
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        component="a"
         // sx={{ color: (theme) => theme.palette.text.secondary }}
       >
         <Icon fontSize={22} />
