@@ -20,6 +20,9 @@ interface GameStore {
 
 const GameStoreContext = createContext<GameStore | null>(null);
 
+// To prevent state update when user close dialog during fetching
+let isOpen = false;
+
 async function fetchCachedImage(
   cacheBucket: mediaCacheApi.CacheName,
   cacheId: string
@@ -119,6 +122,8 @@ export function GameStoreProvider({ children }: { children: React.ReactNode }) {
       setGame(baseGame);
       setLoading(true);
 
+      isOpen = true;
+
       const info = (await invoke("get-game-info", {
         gameSlug: baseGame.slug,
         gameId: baseGame.id,
@@ -153,7 +158,7 @@ export function GameStoreProvider({ children }: { children: React.ReactNode }) {
 
       const image = await fetchImage(imageMeta.key, imageMeta.id, true);
 
-      if (image) {
+      if (image && isOpen) {
         loadedImages.push(image);
         setImages((prevState) => {
           const updatedState = [...prevState];
@@ -168,10 +173,18 @@ export function GameStoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const handleCloseGame = useCallback(() => {
+    isOpen = false;
+
     setGameInfo(null);
     setGame(null);
     setHeaderImage(null);
-    setImages([]);
+    setImages((prevState) => {
+      prevState.forEach((image) => {
+        if (image.data) URL.revokeObjectURL(image.data);
+      });
+
+      return [];
+    });
   }, []);
 
   const handleLaunchGame = useCallback(async () => {
