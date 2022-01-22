@@ -30,7 +30,7 @@ export default function GameDialog() {
           position: "relative",
           overflow: "hidden",
         },
-        top: "calc(3px + env(titlebar-area-height, var(--fallback-title-bar-height)))",
+        top: "calc(1px + env(titlebar-area-height, var(--fallback-title-bar-height)))",
         height: "calc(100% - env(titlebar-area-height, var(--fallback-title-bar-height)))",
       }}
       fullScreen
