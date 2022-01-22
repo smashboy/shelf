@@ -1,19 +1,17 @@
 import { DialogContent, Grid, Typography } from "@mui/material";
 import { ScannerStoreProvider } from "@/storage/ScannerStore";
-import Alert from "@/ui/components/Alert";
 import Footer from "./Footer";
 import DialogWrapper from "./DialogWrapper";
 import ViewSelector from "./ViewSelector";
 
-interface GamesScannerProps {
+export interface GamesScannerProps {
   open?: boolean;
+  onClose?: (addedNewGames?: boolean) => void;
 }
 
 export default function GamesScanner(props: GamesScannerProps) {
-  const { open } = props;
-
   return (
-    <ScannerStoreProvider>
+    <ScannerStoreProvider {...props}>
       <DialogWrapper>
         <DialogContent>
           <Grid container spacing={1}>

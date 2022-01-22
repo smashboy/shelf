@@ -28,7 +28,7 @@ export default function Image(props: ImageProps) {
     }
 
     handleFetchImage();
-  }, [type, imageId]);
+  }, []);
 
   return <StatelessImage loading={image.loading} image={image.data} {...otherProps} />;
 }

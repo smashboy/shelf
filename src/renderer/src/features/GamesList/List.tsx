@@ -9,8 +9,8 @@ export default function List() {
 
   return (
     <Grid container spacing={2}>
-      {games.map((game, index) => (
-        <GameCard key={index} game={game} onClick={() => setGame(game)} />
+      {games.map((game) => (
+        <GameCard key={game.id} game={game} onClick={() => setGame(game)} />
       ))}
     </Grid>
   );

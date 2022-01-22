@@ -32,7 +32,7 @@ export const ViewStoreProvider = ({ children }: { children: React.ReactNode }) =
 
         setView(View.WELCOME);
 
-        // await electronStore.set(IS_NEW_USER_STORAGE_KEY, false);
+        await electronStore.set(IS_NEW_USER_STORAGE_KEY, false);
       } catch (error) {
         console.error(error);
       }

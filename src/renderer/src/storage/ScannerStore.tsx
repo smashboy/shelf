@@ -3,8 +3,10 @@ import { createContext, useCallback, useContext, useMemo, useState } from "react
 import type { ScannedModel } from "src/models/ScannedModel";
 import type { GameBaseModel } from "src/models/GameModel";
 import { useView, View } from "./ViewStore";
+import { GamesScannerProps } from "@/features/GamesScanner";
 
 interface ScannerStore {
+  open: boolean;
   view: ScannerView;
   isLoading: boolean;
   result: Record<string, ScannedModel>;
@@ -25,6 +27,7 @@ interface ScannerStore {
   cancelScan: () => Promise<void>;
   scanFile: () => Promise<void>;
   setView: (view: ScannerView) => void;
+  close: () => void;
   selectGame: (key: string, game: GameBaseModel) => void;
 }
 
@@ -36,8 +39,16 @@ export enum ScannerView {
 
 const ScannerStoreContext = createContext<ScannerStore | null>(null);
 
-export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }) => {
-  const { setView: setAppView } = useView();
+interface ScannerStoreProviderProps extends GamesScannerProps {
+  children: React.ReactNode;
+}
+
+export const ScannerStoreProvider = ({
+  children,
+  open: openProp,
+  onClose,
+}: ScannerStoreProviderProps) => {
+  const { setView: setAppView, view: appView } = useView();
   const { notify } = useNotifications();
 
   const [view, setView] = useState(ScannerView.PROGRAMS_SCANNER);
@@ -49,6 +60,8 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
     Record<string, ScannedModel & { selectedGame?: GameBaseModel }>
   >({});
   const [games, setGames] = useState<Record<string, GameBaseModel[]>>({});
+
+  const open = useMemo(() => appView === View.WELCOME || (openProp ?? false), [appView, openProp]);
 
   const rows = useMemo(
     () =>
@@ -248,6 +261,12 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
 
   const handleSetFilter = useCallback((newFilter: string) => setFilter(newFilter), []);
 
+  const handleClose = useCallback(() => {
+    if (appView === View.WELCOME) setAppView(View.MAIN);
+
+    onClose?.();
+  }, [appView]);
+
   const handleAddGames = useCallback(async () => {
     try {
       const { invoke } = window.bridge.ipcRenderer;
@@ -262,6 +281,7 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
       await invoke("add-games", games);
 
       setAppView(View.MAIN);
+      onClose?.(true);
 
       setIsLoading(false);
     } catch (error) {
@@ -272,6 +292,7 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
   return (
     <ScannerStoreContext.Provider
       value={{
+        open,
         view,
         isLoading,
         result,
@@ -281,6 +302,7 @@ export const ScannerStoreProvider = ({ children }: { children: React.ReactNode }
         games,
         filter,
         selected: selectedPrograms,
+        close: handleClose,
         addGames: handleAddGames,
         setFilter: handleSetFilter,
         selectGame: handleSelectGame,

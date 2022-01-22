@@ -9,6 +9,7 @@ interface GamesListStore {
   launchedGames: string[];
   query: string;
   setQuery: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  loadGames: () => Promise<void>;
   addLaunchedGame: (gamePath: string) => void;
 }
 
@@ -84,6 +85,7 @@ export const GamesListStoreProvider = ({ children }: { children: React.ReactNode
         addLaunchedGame: handleAddLaunchedGame,
         launchedGames,
         query,
+        loadGames: handleLoadGames,
         setQuery: handleQuery,
       }}
     >
