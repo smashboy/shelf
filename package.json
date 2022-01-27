@@ -1,8 +1,8 @@
 {
-  "name": "vite-react-electron",
-  "version": "1.0.0",
-  "description": "Vite React Electron boilerplate.",
-  "author": "me lul",
+  "name": "shelf",
+  "version": "0.0.1",
+  "description": "Shelf - your games in one place.",
+  "author": "Smashboy",
   "license": "MIT",
   "main": "dist/main/index.cjs",
   "scripts": {
@@ -52,5 +52,17 @@
     "//": "Used in build scripts",
     "HOST": "127.0.0.1",
     "PORT": 3344
+  },
+  "build": {
+    "productName": "Shelf",
+    "appId": "org.shelf",
+    "win": {
+      "target": "nsis",
+      "icon": "dist/renderer/images/icon.ico"
+    },
+    "files": [
+      "dist/**/*",
+      "package.json"
+    ]
   }
 }

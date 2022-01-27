@@ -31,7 +31,7 @@ let win: BrowserWindow | null = null;
 
 async function mainWin() {
   win = new BrowserWindow({
-    title: "Main window",
+    title: "Shelf",
     autoHideMenuBar: true,
     minWidth: 1280,
     minHeight: 600,
